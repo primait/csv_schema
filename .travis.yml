@@ -1,0 +1,19 @@
+language: elixir
+elixir:
+  - 1.6
+  - 1.7
+otp_release:
+  - 20.3
+  - 21.0
+matrix:
+  exclude:
+    - elixir: 1.7
+      otp_release: 21.0
+    - elixir: 1.6
+      otp_release: 21.0
+sudo: false
+before_script:
+  - mix deps.get
+script:
+  - mix test && mix credo && mix dialyzer
+  - cd installer && elixir -e "Version.match?(System.version, ~s(~> 1.7)) || System.halt(0)" -S mix test && mix credo && mix dialyzer

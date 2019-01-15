@@ -26,16 +26,18 @@ defmodule Csv.Schema do
 
     At the end of compilation now your module is a Struct and has 3 kind of getters:
 
-    - by_{key_field_name} -> returns single records object or nil
-    - filter_by_{field_name} -> returns list of records matching provided property
-    - get_all -> returns all records
+    - `by_{key_field_name}` -> returns single records object or nil
+    - `filter_by_{field_name}` -> returns list of records matching provided property
+    - `get_all` -> returns all records
+
 
     Back to the example in the module will be created:
 
-      __MODULE__.by_id/1 expecting integer as arg
-      __MODULE__.filter_by_name/1 expecting string as arg
-      __MODULE__.by_fiscal_code/1 expecting string as arg
-      __MODULE__.get_all/0
+
+    - `__MODULE__.by_id/1` expecting integer as arg
+    - `__MODULE__.filter_by_name/1` expecting string as arg
+    - `__MODULE__.by_fiscal_code/1` expecting string as arg
+    - `__MODULE__.get_all/0`
   """
 
   alias Csv.Schema
@@ -155,13 +157,13 @@ defmodule Csv.Schema do
 
   @doc """
   Configure a new field (csv column). Parameters are
-  - name: new struct field name
-  - header: header name in csv file
-  - opts: list of configuration values
-    - key: boolean; only one key could be set. It is something similar to a primary key
-    - filter_by: boolean; do i create a filter_by_{name} function for this field for you?
-    - unique: boolean; creates a function by_{name} for you
-    - parser: function; parser function used to transform data from string to custom type
+  - `name`: new struct field name
+  - `header`: header name in csv file
+  - `opts`: list of configuration values
+    - `key`: boolean; only one key could be set. It is something similar to a primary key
+    - `filter_by`: boolean; do i create a filter_by_{name} function for this field for you?
+    - `unique`: boolean; creates a function by_{name} for you
+    - `parser`: function; parser function used to transform data from string to custom type
   """
   defmacro field(name, header, opts \\ []) do
     quote do

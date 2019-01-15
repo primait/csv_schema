@@ -23,21 +23,21 @@ defmodule Csv.Schema.Parser do
   an exception is raised
   If given argument is empty string or nil return value will be nil
 
-  # Examples
-    iex> Csv.Schema.Parser.atom!("")
-    nil
+  ## Examples
+      iex> Csv.Schema.Parser.atom!("")
+      nil
 
-    iex> Csv.Schema.Parser.atom!(nil)
-    nil
+      iex> Csv.Schema.Parser.atom!(nil)
+      nil
 
-    iex> Csv.Schema.Parser.atom!("id")
-    :id
+      iex> Csv.Schema.Parser.atom!("id")
+      :id
 
-    iex> Csv.Schema.Parser.atom!(:id)
-    :id
+      iex> Csv.Schema.Parser.atom!(:id)
+      :id
 
-    iex> Csv.Schema.Parser.atom!(1)
-    ** (RuntimeError) Cannot cast '1' to atom
+      iex> Csv.Schema.Parser.atom!(1)
+      ** (RuntimeError) Cannot cast '1' to atom
   """
   @spec atom!(String.t() | atom) :: atom | nil | no_return
   def atom!(""), do: nil
@@ -52,20 +52,20 @@ defmodule Csv.Schema.Parser do
   If given argument is empty string or nil return value will be nil
 
   # Examples
-    iex> Csv.Schema.Parser.string!("")
-    nil
+      iex> Csv.Schema.Parser.string!("")
+      nil
 
-    iex> Csv.Schema.Parser.string!(nil)
-    nil
+      iex> Csv.Schema.Parser.string!(nil)
+      nil
 
-    iex> Csv.Schema.Parser.string!("id")
-    "id"
+      iex> Csv.Schema.Parser.string!("id")
+      "id"
 
-    iex> Csv.Schema.Parser.string!(:id)
-    "id"
+      iex> Csv.Schema.Parser.string!(:id)
+      "id"
 
-    iex> Csv.Schema.Parser.string!(1)
-    ** (RuntimeError) Cannot cast '1' to string
+      iex> Csv.Schema.Parser.string!(1)
+      ** (RuntimeError) Cannot cast '1' to string
   """
   @spec string!(String.t() | atom) :: String.t() | nil | no_return
   def string!(""), do: nil
@@ -80,18 +80,17 @@ defmodule Csv.Schema.Parser do
   If given argument is empty string or nil return value will be nil
 
   # Examples
+      iex> Csv.Schema.Parser.integer!("")
+      nil
 
-    iex> Csv.Schema.Parser.integer!("")
-    nil
+      iex> Csv.Schema.Parser.integer!(nil)
+      nil
 
-    iex> Csv.Schema.Parser.integer!(nil)
-    nil
+      iex> Csv.Schema.Parser.integer!("1")
+      1
 
-    iex> Csv.Schema.Parser.integer!("1")
-    1
-
-    iex> Csv.Schema.Parser.integer!("1a")
-    ** (RuntimeError) Cannot cast '1a' to integer
+      iex> Csv.Schema.Parser.integer!("1a")
+      ** (RuntimeError) Cannot cast '1a' to integer
   """
   @spec integer!(String.t()) :: number | nil | no_return
   def integer!(""), do: nil
@@ -110,17 +109,17 @@ defmodule Csv.Schema.Parser do
   If given argument is empty string or nil return value will be nil
 
   # Examples
-    iex> Csv.Schema.Parser.float!("")
-    nil
+      iex> Csv.Schema.Parser.float!("")
+      nil
 
-    iex> Csv.Schema.Parser.float!(nil)
-    nil
+      iex> Csv.Schema.Parser.float!(nil)
+      nil
 
-    iex> Csv.Schema.Parser.float!("1.2")
-    1.2
+      iex> Csv.Schema.Parser.float!("1.2")
+      1.2
 
-    iex> Csv.Schema.Parser.float!("1a")
-    ** (RuntimeError) Cannot cast '1a' to float
+      iex> Csv.Schema.Parser.float!("1a")
+      ** (RuntimeError) Cannot cast '1a' to float
   """
   @spec float!(String.t()) :: number | nil | no_return
   def float!(""), do: nil
@@ -140,20 +139,20 @@ defmodule Csv.Schema.Parser do
   If given argument is empty string or nil return value will be nil
 
   # Examples
-    iex> Csv.Schema.Parser.date!("", "whatever")
-    nil
+      iex> Csv.Schema.Parser.date!("", "whatever")
+      nil
 
-    iex> Csv.Schema.Parser.date!(nil, "whatever")
-    nil
+      iex> Csv.Schema.Parser.date!(nil, "whatever")
+      nil
 
-    iex> Csv.Schema.Parser.date!("18/01/2019", "{0D}/{0M}/{0YYYY}")
-    ~N[2019-01-18 00:00:00]
+      iex> Csv.Schema.Parser.date!("18/01/2019", "{0D}/{0M}/{0YYYY}")
+      ~N[2019-01-18 00:00:00]
 
-    iex> Csv.Schema.Parser.date!("18/01/2019", "{0M}/{0D}/{0YYYY}")
-    ** (RuntimeError) Cannot cast '18/01/2019' to date with format '{0M}/{0D}/{0YYYY}'
+      iex> Csv.Schema.Parser.date!("18/01/2019", "{0M}/{0D}/{0YYYY}")
+      ** (RuntimeError) Cannot cast '18/01/2019' to date with format '{0M}/{0D}/{0YYYY}'
 
-    iex> Csv.Schema.Parser.date!("18/01/2019", "MDY")
-    ** (RuntimeError) Invalid date format 'MDY'
+      iex> Csv.Schema.Parser.date!("18/01/2019", "MDY")
+      ** (RuntimeError) Invalid date format 'MDY'
   """
   @spec date!(String.t(), String.t()) :: DateTime.t() | nil | no_return
   def date!("", _), do: nil
@@ -178,21 +177,20 @@ defmodule Csv.Schema.Parser do
   If given argument is empty string or nil return value will be nil
 
   # Examples
+      iex> Csv.Schema.Parser.boolean!("")
+      nil
 
-    iex> Csv.Schema.Parser.boolean!("")
-    nil
+      iex> Csv.Schema.Parser.boolean!(nil)
+      nil
 
-    iex> Csv.Schema.Parser.boolean!(nil)
-    nil
+      iex> Csv.Schema.Parser.boolean!("true")
+      true
 
-    iex> Csv.Schema.Parser.boolean!("true")
-    true
+      iex> Csv.Schema.Parser.boolean!("false")
+      false
 
-    iex> Csv.Schema.Parser.boolean!("false")
-    false
-
-    iex> Csv.Schema.Parser.boolean!("1a")
-    ** (RuntimeError) Cannot cast '1a' to boolean
+      iex> Csv.Schema.Parser.boolean!("1a")
+      ** (RuntimeError) Cannot cast '1a' to boolean
   """
   @spec boolean!(String.t()) :: boolean | nil | no_return
   def boolean!(""), do: nil

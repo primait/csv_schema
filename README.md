@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/primait/csv_schema.svg?branch=master)](https://travis-ci.org/primait/csv_schema)
+
 # Csv Schema
 
 Csv schema is a library helping you to build Ecto.Schema-like modules having a csv file as source.
@@ -40,7 +42,7 @@ defmodule Person do
     field :id, "ID", key: true, parser: &Parser.integer!/1
     field :name, "Name", filter_by: true
     field :fiscal_code, "Fiscal Code", unique: true
-    field :birth, "Date of birth", parser: &Parser.date!(&1, "{0D}/{0M}/{0YYYY}")
+    field :birth, "Date of birth", parser: &Parser.date!(&1, "{0M}/{0D}/{0YYYY}")
   end
 end
 ```
@@ -68,6 +70,9 @@ Where:
 - `by_id` returns a `%Person{}` or `nil` if key is not mapped in csv
 - `filter_by_name` returns a `[%Person{}, %Person{}, ...]` or `[]` if input predicate does not match any person
 - `by_fiscal_code` returns a `%Person{}` or `nil` if no person have that fiscal code in csv
+
+Note: if @auto_primary_key is set to `true` this macro creates automatically a new column called `id`
+(and new `by_id` method). Its value is a progressive integer
 
 ## Field configuration
 
