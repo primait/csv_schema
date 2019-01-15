@@ -12,6 +12,9 @@ matrix:
     - elixir: 1.6
       otp_release: 21.0
 sudo: false
+cache:
+    directories:
+     - /home/travis/csv_schema/_build
 before_script:
   - mix deps.get
 script:
