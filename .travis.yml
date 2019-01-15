@@ -17,6 +17,10 @@ cache:
      - /home/travis/csv_schema/_build
 before_script:
   - mix deps.get
+  #- export PLT_FILENAME=elixir-${TRAVIS_ELIXIR_VERSION}_${TRAVIS_OTP_RELEASE}.plt
+  #- export PLT_LOCATION=/home/travis/$PLT_FILENAME
+  #- wget -O $PLT_LOCATION https://raw.github.com/danielberkompas/travis_elixir_plts/master/$PLT_FILENAME
 script:
-  - mix test && mix credo && mix dialyzer
-  - cd installer && elixir -e "Version.match?(System.version, ~s(~> 1.7)) || System.halt(0)" -S mix test && mix credo && mix dialyzer
+  - mix test && mix credo
+  #- dialyzer --no_check_plt --plt $PLT_LOCATION --no_native _build/test/lib/csv_schema/ebin
+  - cd installer && elixir -e "Version.match?(System.version, ~s(~> 1.7)) || System.halt(0)" -S mix test && mix credo
