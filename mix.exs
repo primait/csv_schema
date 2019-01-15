@@ -5,7 +5,7 @@ defmodule Csv.Schema.MixProject do
     [
       app: :csv_schema,
       version: "0.1.0",
-      elixir: "~> 1.7",
+      elixir: "~> 1.6",
       elixirc_paths: ["lib"],
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
