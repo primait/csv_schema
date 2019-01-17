@@ -2,14 +2,6 @@ defmodule FellowTest do
   use ExUnit.Case
   doctest Csv.Schema
 
-  test "Get by id. When id exists in csv returns a fellow" do
-    assert Fellow.by_id(1).__struct__ == Fellow
-  end
-
-  test "Get by id. When id doesn't exists in csv returns nil" do
-    assert is_nil(Fellow.by_id(0))
-  end
-
   test "Get by unique field. When field value exists in csv returns a fellow" do
     assert Fellow.by_email("mchaplyn9@sciencedaily.com").__struct__ == Fellow
   end

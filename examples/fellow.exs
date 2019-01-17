@@ -1,12 +1,11 @@
 defmodule Fellow do
   @moduledoc """
-    In Fellow example i use auto primary key, ignoring id column in csv
+  In Fellow example i use auto primary key, ignoring id column in csv
   """
   use Csv.Schema
 
   import Csv.Schema.Parser
 
-  @auto_primary_key true
   schema "data/data.csv" do
     field :first_name, "first_name", filter_by: true
     field :last_name, "last_name"
@@ -17,23 +16,17 @@ defmodule Fellow do
   end
 end
 
+# iex> Fellow.filter_by_first_name("Ulick")
 # [Fellow.t()]
-# Fellow.filter_by_first_name("Ulick")
 
+# iex> Fellow.filter_by_gender("Male")
 # [Fellow.t()]
-# Fellow.filter_by_gender("Male")
 
+# iex> Fellow.filter_by_gender("?")
 # [] (empty)
-# Fellow.filter_by_gender("?")
 
+# iex> Fellow.by_email("fhardsonq@yahoo.co.jp")
 # Fellow.t()
-# Fellow.by_email("fhardsonq@yahoo.co.jp")
 
+# iex> Fellow.by_email("simone.cottini@prima.it")
 # nil
-# Fellow.by_email("simone.cottini@prima.it")
-
-# Fellow.t()
-# Fellow.by_id(1)
-
-# nil
-# Fellow.by_id(0)

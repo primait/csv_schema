@@ -37,8 +37,8 @@ defmodule Person do
   use Csv.Schema
   alias Csv.Schema.Parser
 
-  @auto_primary_key true
   schema "path/to/person.csv" do
+    field :id, "id", key: true
     field :first_name, "first_name", filter_by: true
     field :last_name, "last_name"
     field :email, "email", unique: true
@@ -49,10 +49,25 @@ defmodule Person do
 end
 ```
 
+Note that it's not a requirement to map all fields, but every field mapped must
+have a column in csv file.
+For example the following field configuration will result in a compilation error
+
+```elixir
+field :id, "non_existing_id", ....
+```
+
 Now Person module is a struct, defined like this:
+
 ```elixir
 defmodule Person do
-  defstruct id: nil, first_name: nil, last_name: nil, email: nil, gender: nil, ip_address: nil, date_of_birth: nil
+  defstruct id: nil,
+            first_name: nil,
+            last_name: nil,
+            email: nil,
+            gender: nil,
+            ip_address: nil,
+            date_of_birth: nil
 end
 ```
 
@@ -95,7 +110,9 @@ where:
 - `{opts}` is a keyword list containing special configurations
 
 opts:
-- `:key`: boolean. Only one key could be (and must be) set. If set to true creates the `by_{name}` function for you.
+- `:key`: boolean. At most one key could be set. If set to true creates the `by_{name}` function for you.
 - `:unique`: boolean. If set to true creates the `by_{name}` function for you. All csv values must be unique or an exception is raised
 - `:filter_by`: boolean. If set to true creates the `filter_by_{name}` function
 - `:parser`: function. An arity 1 function used to map values from string to a custom type
+
+Note that every configuration is optional

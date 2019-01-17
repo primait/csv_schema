@@ -12,9 +12,10 @@ defmodule Csv.Schema.Parser do
     path
     |> File.stream!()
     |> CSV.decode(headers: true)
+    |> Stream.with_index(1)
     |> Stream.map(fn
-      {:error, reason} -> raise "Failed to parse line with reason #{reason}"
-      {:ok, row} -> row
+      {{:error, reason}, _} -> raise "Failed to parse line with reason #{reason}"
+      {{:ok, row}, idx} -> Map.put(row, :__id__, idx)
     end)
   end
 

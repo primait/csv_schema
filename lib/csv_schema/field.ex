@@ -7,8 +7,8 @@ defmodule Csv.Schema.Field do
             header: "",
             parser: &Parser.string!/1,
             key: false,
-            filter_by: false,
-            unique: false
+            unique: false,
+            filter_by: false
 
   @type t :: %__MODULE__{}
 
@@ -20,8 +20,8 @@ defmodule Csv.Schema.Field do
       header: header,
       parser: Keyword.get(opts, :parser, &Parser.string!/1),
       key: Keyword.get(opts, :key, false),
-      filter_by: Keyword.get(opts, :filter_by, false),
-      unique: Keyword.get(opts, :unique, false)
+      unique: Keyword.get(opts, :unique, false),
+      filter_by: Keyword.get(opts, :filter_by, false)
     )
   end
 end
