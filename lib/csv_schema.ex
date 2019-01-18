@@ -128,7 +128,7 @@ defmodule Csv.Schema do
     - `key`: boolean; at most one key must be set. It is something similar to a primary key
     - `filter_by`: boolean; do i create a `filter_by_{name}` function for this field for you?
     - `unique`: boolean; creates a function `by_{name}` for you
-    - `parser`: function; parser function used to transform data from string to custom type
+    - `parser`: function; parser function used to get_changeset data from string to custom type
   """
   defmacro field(name, header, opts \\ []) do
     quote do
@@ -176,18 +176,20 @@ defmodule Csv.Schema do
   defp gen_by_functions(content, fields, internal_id_fn, by_fn) do
     Enum.each(content, fn row ->
       id = Map.get(row, :__id__)
-      changeset = transform(row, fields)
+      changeset = get_changeset(row, fields)
       internal_id_fn.(id, changeset)
-    end)
-
-    Enum.each(content, fn row ->
-      id = Map.get(row, :__id__)
-      changeset = transform(row, fields)
 
       Enum.each(fields, fn
-        %Field{name: name, key: true} -> by_fn.(name, Map.get(changeset, name), id)
-        %Field{name: name, unique: true} -> by_fn.(name, Map.get(changeset, name), id)
-        _ -> :ok
+        %Field{name: name, key: true} ->
+          value = Map.get(changeset, name)
+          if not is_nil(value), do: by_fn.(name, value, id)
+
+        %Field{name: name, unique: true} ->
+          value = Map.get(changeset, name)
+          if not is_nil(value), do: by_fn.(name, value, id)
+
+        _ ->
+          :ok
       end)
     end)
   end
@@ -197,7 +199,7 @@ defmodule Csv.Schema do
     Enum.each(fields, fn
       %Field{name: name, filter_by: true} ->
         content
-        |> Enum.group_by(&Map.get(transform(&1, fields), name))
+        |> Enum.group_by(&Map.get(get_changeset(&1, fields), name))
         |> Enum.each(fn {key, value} -> filter_by_fn.(name, key, Enum.map(value, & &1.__id__)) end)
 
       _ ->
@@ -216,8 +218,8 @@ defmodule Csv.Schema do
     end)
   end
 
-  @spec transform(map, [Field.t()]) :: map
-  defp transform(row, fields) do
+  @spec get_changeset(map, [Field.t()]) :: map
+  defp get_changeset(row, fields) do
     Enum.reduce(fields, %{}, fn %Field{name: name, header: header, parser: parser}, acc ->
       Map.put(acc, name, parser.(Map.get(row, header)))
     end)
