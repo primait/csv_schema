@@ -161,7 +161,7 @@ defmodule Csv.Schema do
 
   @doc false
   @spec __gen_functions__(
-          Stream.t(),
+          [map],
           [Field.t()],
           (String.t(), map -> :ok),
           (atom, term, map -> :ok),
@@ -172,7 +172,7 @@ defmodule Csv.Schema do
     gen_filter_by_functions(content, fields, filter_by_fn)
   end
 
-  @spec gen_by_functions(Stream.t(), [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
+  @spec gen_by_functions([map], [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
   defp gen_by_functions(content, fields, internal_id_fn, by_fn) do
     Enum.each(content, fn row ->
       id = Map.get(row, :__id__)
@@ -247,7 +247,7 @@ defmodule Csv.Schema do
   end
 
   @doc false
-  @spec __check_csv_has_fields__!(Stream.t(), [Field.t()]) :: :ok | no_return
+  @spec __check_csv_has_fields__!([map], [Field.t()]) :: :ok | no_return
   def __check_csv_has_fields__!(content, fields) do
     content
     |> Enum.take(1)
