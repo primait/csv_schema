@@ -6,7 +6,7 @@ defmodule Csv.Schema.MixProject do
       app: :csv_schema,
       version: "0.1.1",
       elixir: "~> 1.6",
-      elixirc_paths: ["lib"],
+      elixirc_paths: elixir_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -20,6 +20,9 @@ defmodule Csv.Schema.MixProject do
       docs: [main: Csv.Schema]
     ]
   end
+
+  def elixir_paths(env) when env in [:dev, :test], do: ["lib", "benchmark"]
+  def elixir_paths(_), do: ["lib"]
 
   def application, do: [extra_applications: [:logger]]
 

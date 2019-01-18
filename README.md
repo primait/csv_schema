@@ -116,3 +116,44 @@ opts:
 - `:parser`: function. An arity 1 function used to map values from string to a custom type
 
 Note that every configuration is optional
+
+## Keep in mind
+
+Compilation time increase in a linear manner if csv contains lots of lines and you
+configure multiple fields candidate for method creation (flags `key`, `unique` and/or `filter_by` set to true)
+Because "without data you're just another person with an opinion" here some data
+
+csv rows | key | unique | filter_by | compile time ms
+--------:|:---:|:------:|:---------:|----------------:
+1_000    | no  | 0      | 0         | 22 ms
+1_000    | yes | 1      | 1         | 19 ms
+1_000    | yes | 2      | 2         | 21 ms
+1_000    | yes | 2      | 4         | 29 ms
+1_000    | yes | 2      | 0         | 15 ms
+1_000    | yes | 0      | 4         | 26 ms
+1_000    | no  | 2      | 0         | 12 ms
+1_000    | no  | 0      | 4         | 22 ms
+5_000    | no  | 0      | 0         | 555 ms
+5_000    | yes | 1      | 1         | 1_695 ms
+5_000    | yes | 2      | 2         | 2_341 ms
+5_000    | yes | 2      | 4         | 3_273 ms
+5_000    | yes | 2      | 0         | 1_976 ms
+5_000    | yes | 0      | 4         | 2_698 ms
+5_000    | no  | 2      | 0         | 1_559 ms
+5_000    | no  | 0      | 4         | 2_146 ms
+10_000   | no  | 0      | 0         | 1_701 ms
+10_000   | yes | 1      | 1         | 3_624 ms
+10_000   | yes | 2      | 2         | 5_169 ms
+10_000   | yes | 2      | 4         | 6_988 ms
+10_000   | yes | 2      | 0         | 4_279 ms
+10_000   | yes | 0      | 4         | 5_638 ms
+10_000   | no  | 2      | 0         | 3_278 ms
+10_000   | no  | 0      | 4         | 4_846 ms
+
+5 compilations average time.
+
+Executed on my machine:
+
+    Lenovo Thinkpad T480
+    CPU: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+    RAM: 32GB

@@ -56,6 +56,7 @@ defmodule Csv.Schema do
       unquote do
         quote do
           @content unquote(file_path) |> Parser.csv!()
+          @rows_count Enum.count(@content)
 
           Module.put_attribute(__MODULE__, :in_, true)
 
@@ -80,19 +81,18 @@ defmodule Csv.Schema do
           # Functions
 
           internal_id_fn = fn value, changeset ->
-            @keys value
             def unquote(:__id__)(unquote(value)) do
               struct!(__MODULE__, unquote(Macro.escape(changeset)))
             end
           end
 
           by_fn = fn name, value, id ->
-            def unquote(:"by_#{name}")(unquote(value)), do: __MODULE__.__id__(unquote(id))
+            def unquote(:"by_#{name}")(unquote(value)), do: apply(__MODULE__, :__id__, [unquote(id)])
           end
 
           filter_by_fn = fn name, value, ids ->
             def unquote(:"filter_by_#{name}")(unquote(value)) do
-              Enum.map(unquote(Macro.escape(ids)), &__MODULE__.__id__/1)
+              unquote(Macro.escape(ids)) |> Enum.map(&apply(__MODULE__, :__id__, [&1]))
             end
           end
 
@@ -102,7 +102,7 @@ defmodule Csv.Schema do
 
           def unquote(:__id__)(_), do: nil
 
-          def get_all, do: Enum.map(@keys, &__MODULE__.__id__/1)
+          def get_all, do: 1..@rows_count |> Stream.map(&__MODULE__.__id__/1)
 
           default_by_fn = fn name -> def unquote(:"by_#{name}")(_), do: nil end
 
@@ -161,7 +161,7 @@ defmodule Csv.Schema do
 
   @doc false
   @spec __gen_functions__(
-          [map],
+          Stream.t(),
           [Field.t()],
           (String.t(), map -> :ok),
           (atom, term, map -> :ok),
@@ -172,16 +172,21 @@ defmodule Csv.Schema do
     gen_filter_by_functions(content, fields, filter_by_fn)
   end
 
-  @spec gen_by_functions([map], [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
+  @spec gen_by_functions(Stream.t(), [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
   defp gen_by_functions(content, fields, internal_id_fn, by_fn) do
     Enum.each(content, fn row ->
-      id = Map.fetch!(row, :__id__)
+      id = Map.get(row, :__id__)
       changeset = transform(row, fields)
       internal_id_fn.(id, changeset)
+    end)
+
+    Enum.each(content, fn row ->
+      id = Map.get(row, :__id__)
+      changeset = transform(row, fields)
 
       Enum.each(fields, fn
-        %Field{name: name, key: true} -> by_fn.(name, Map.fetch!(changeset, name), id)
-        %Field{name: name, unique: true} -> by_fn.(name, Map.fetch!(changeset, name), id)
+        %Field{name: name, key: true} -> by_fn.(name, Map.get(changeset, name), id)
+        %Field{name: name, unique: true} -> by_fn.(name, Map.get(changeset, name), id)
         _ -> :ok
       end)
     end)
@@ -214,7 +219,7 @@ defmodule Csv.Schema do
   @spec transform(map, [Field.t()]) :: map
   defp transform(row, fields) do
     Enum.reduce(fields, %{}, fn %Field{name: name, header: header, parser: parser}, acc ->
-      Map.put(acc, name, parser.(Map.fetch!(row, header)))
+      Map.put(acc, name, parser.(Map.get(row, header)))
     end)
   end
 
@@ -242,9 +247,11 @@ defmodule Csv.Schema do
   end
 
   @doc false
-  @spec __check_csv_has_fields__!([tuple], [Field.t()]) :: :ok | no_return
-  def __check_csv_has_fields__!(csv, fields) do
-    Enum.each(csv, fn row ->
+  @spec __check_csv_has_fields__!(Stream.t(), [Field.t()]) :: :ok | no_return
+  def __check_csv_has_fields__!(content, fields) do
+    content
+    |> Enum.take(1)
+    |> Enum.each(fn row ->
       if match_all_fields?(row, fields), do: :ok, else: raise("Not all fields are mapped to csv")
     end)
   end
@@ -256,18 +263,18 @@ defmodule Csv.Schema do
 
   @doc false
   @spec __check_unique__!([tuple], [Field.t()]) :: :ok | no_return
-  def __check_unique__!(csv, fields) do
+  def __check_unique__!(content, fields) do
     Enum.each(fields, fn
-      %Field{header: header, key: true} -> unique_or_raise!(csv, header)
-      %Field{header: header, unique: true} -> unique_or_raise!(csv, header)
+      %Field{header: header, key: true} -> unique_or_raise!(content, header)
+      %Field{header: header, unique: true} -> unique_or_raise!(content, header)
       _ -> :ok
     end)
   end
 
   @spec unique_or_raise!([tuple], term) :: :ok | no_return
-  defp unique_or_raise!(csv, header) do
+  defp unique_or_raise!(content, header) do
     values =
-      csv
+      content
       |> Enum.map(&Map.get(&1, header))
       |> Enum.reject(fn value -> is_nil(value) || value == "" end)
 
