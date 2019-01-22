@@ -90,7 +90,7 @@ Where:
 - `filter_by_first_name` returns a `[%Person{}, %Person{}, ...]` or `[]` if input predicate does not match any person
 - `by_email` returns a `%Person{}` or `nil` if no person have provided email in csv
 - `filter_by_gender` returns a `[%Person{}, %Person{}, ...]` or `[]` if input predicate does not match any person gender
-- `get_all` return all csv rows
+- `get_all` return all csv rows as a Stream
 
 Note: if @auto_primary_key is set to `true` this macro creates automatically a new column called `id`
 (and new `by_id` method). Its value is a progressive integer; otherwise you have to set a key opt
