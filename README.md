@@ -44,7 +44,7 @@ defmodule Person do
     field :email, "email", unique: true
     field :gender, "gender", filter_by: true
     field :ip_address, "ip_address"
-    field :date_of_birth, "date_of_birth", parser: &date!(&1, "{0M}/{0D}/{0YYYY}")
+    field :date_of_birth, "date_of_birth", parser: &Parser.date!(&1, "{0M}/{0D}/{0YYYY}")
   end
 end
 ```
