@@ -1,6 +1,5 @@
 defmodule FellowTest do
   use ExUnit.Case
-  doctest Csv.Schema
 
   test "Get by unique field. When field value exists in csv returns a fellow" do
     assert Fellow.by_email("mchaplyn9@sciencedaily.com").__struct__ == Fellow

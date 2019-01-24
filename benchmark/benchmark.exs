@@ -1,10 +1,10 @@
 # Rename file to .ex to let it be compiled
 
 defmodule R1_000.KN.U0.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_1_000.csv" do
     field :first_name, "first_name"
@@ -19,10 +19,10 @@ defmodule R1_000.KN.U0.F0 do
 end
 
 defmodule R1_000.KS.U1.F1 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_1_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -37,10 +37,10 @@ defmodule R1_000.KS.U1.F1 do
 end
 
 defmodule R1_000.KS.U2.F2 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_1_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -56,10 +56,10 @@ defmodule R1_000.KS.U2.F2 do
 end
 
 defmodule R1_000.KS.U2.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_1_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -75,10 +75,10 @@ defmodule R1_000.KS.U2.F4 do
 end
 
 defmodule R1_000.KS.U2.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_1_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -94,10 +94,10 @@ defmodule R1_000.KS.U2.F0 do
 end
 
 defmodule R1_000.KS.U0.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_1_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -113,10 +113,10 @@ defmodule R1_000.KS.U0.F4 do
 end
 
 defmodule R1_000.KN.U2.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_1_000.csv" do
     field :id, "id"
@@ -132,10 +132,10 @@ defmodule R1_000.KN.U2.F0 do
 end
 
 defmodule R1_000.KN.U0.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_1_000.csv" do
     field :id, "id"
@@ -151,10 +151,10 @@ defmodule R1_000.KN.U0.F4 do
 end
 
 defmodule R5_000.KN.U0.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_5_000.csv" do
     field :first_name, "first_name"
@@ -169,10 +169,10 @@ defmodule R5_000.KN.U0.F0 do
 end
 
 defmodule R5_000.KS.U1.F1 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_5_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -187,10 +187,10 @@ defmodule R5_000.KS.U1.F1 do
 end
 
 defmodule R5_000.KS.U2.F2 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_5_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -206,10 +206,10 @@ defmodule R5_000.KS.U2.F2 do
 end
 
 defmodule R5_000.KS.U2.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_5_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -225,10 +225,10 @@ defmodule R5_000.KS.U2.F4 do
 end
 
 defmodule R5_000.KS.U2.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_5_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -244,10 +244,10 @@ defmodule R5_000.KS.U2.F0 do
 end
 
 defmodule R5_000.KS.U0.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_5_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -263,10 +263,10 @@ defmodule R5_000.KS.U0.F4 do
 end
 
 defmodule R5_000.KN.U2.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_5_000.csv" do
     field :id, "id"
@@ -282,10 +282,10 @@ defmodule R5_000.KN.U2.F0 do
 end
 
 defmodule R5_000.KN.U0.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_5_000.csv" do
     field :id, "id"
@@ -301,10 +301,10 @@ defmodule R5_000.KN.U0.F4 do
 end
 
 defmodule R10_000.KN.U0.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_10_000.csv" do
     field :first_name, "first_name"
@@ -319,10 +319,10 @@ defmodule R10_000.KN.U0.F0 do
 end
 
 defmodule R10_000.KS.U1.F1 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_10_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -337,10 +337,10 @@ defmodule R10_000.KS.U1.F1 do
 end
 
 defmodule R10_000.KS.U2.F2 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_10_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -356,10 +356,10 @@ defmodule R10_000.KS.U2.F2 do
 end
 
 defmodule R10_000.KS.U2.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_10_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -375,10 +375,10 @@ defmodule R10_000.KS.U2.F4 do
 end
 
 defmodule R10_000.KS.U2.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_10_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -394,10 +394,10 @@ defmodule R10_000.KS.U2.F0 do
 end
 
 defmodule R10_000.KS.U0.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_10_000.csv" do
     field :id, "id", key: true, parser: &integer!/1
@@ -413,10 +413,10 @@ defmodule R10_000.KS.U0.F4 do
 end
 
 defmodule R10_000.KN.U2.F0 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_10_000.csv" do
     field :id, "id"
@@ -432,10 +432,10 @@ defmodule R10_000.KN.U2.F0 do
 end
 
 defmodule R10_000.KN.U0.F4 do
+  @start_time :os.system_time(:millisecond)
   @moduledoc false
   use Csv.Schema
   import Csv.Schema.Parser
-  @start_time :os.system_time(:millisecond)
 
   schema "data/dataset_10_000.csv" do
     field :id, "id"

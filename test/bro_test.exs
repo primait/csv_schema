@@ -1,6 +1,5 @@
 defmodule BroTest do
   use ExUnit.Case
-  doctest Csv.Schema
 
   # Now primary key is bro_id
   test "Get by id. When id exists in csv returns a bro" do

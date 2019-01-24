@@ -1,6 +1,8 @@
-[![Build Status](https://travis-ci.org/primait/csv_schema.svg?branch=master)](https://travis-ci.org/primait/csv_schema)
-
 # Csv Schema
+
+[![Hex pm](https://img.shields.io/hexpm/v/csv_schema.svg?style=flat)](https://hex.pm/packages/csv_schema)
+[![Build Status](https://travis-ci.org/primait/csv_schema.svg?branch=master)](https://travis-ci.org/primait/csv_schema)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Csv schema is a library helping you to build Ecto.Schema-like modules having a csv file as source.
 
