@@ -59,6 +59,9 @@ For example the following field configuration will result in a compilation error
 field :id, "non_existing_id", ....
 ```
 
+Moreover it's possible to pass to `use Csv.Schema` the `:separator` param. This
+let the macro split csv for you using provided separator.
+
 Now Person module is a struct, defined like this:
 
 ```elixir

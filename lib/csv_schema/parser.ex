@@ -7,11 +7,16 @@ defmodule Csv.Schema.Parser do
   Given a csv file path try to parse as csv with headers. Use list of maps as
   data representation
   """
-  @spec csv!(String.t()) :: map | no_return
-  def csv!(path) do
+  @spec csv!(String.t(), pos_integer) :: map | no_return
+  def csv!(path, separator = ?;), do: csv(path, separator)
+  def csv!(path, separator = ?,), do: csv(path, separator)
+  def csv!(path, separator = ?\t), do: csv(path, separator)
+  def csv!(_, s), do: raise("Separator '#{s}' should be a codepoint and one of ';' ',' or '\\t'")
+
+  defp csv(path, separator) do
     path
     |> File.stream!()
-    |> CSV.decode(headers: true)
+    |> CSV.decode(separator: separator, headers: true)
     |> Stream.with_index(1)
     |> Stream.map(fn
       {{:error, reason}, _} -> raise "Failed to parse line with reason #{reason}"

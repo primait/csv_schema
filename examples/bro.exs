@@ -2,7 +2,7 @@ defmodule Bro do
   @moduledoc """
   In Bro example i use csv's primary key
   """
-  use Csv.Schema
+  use Csv.Schema, separator: ?,
 
   import Csv.Schema.Parser
 
