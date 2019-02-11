@@ -8,7 +8,7 @@ defmodule Csv.Schema do
     APIs related to this macro are similar to Ecto.Schema; Eg.
 
       defmodule Person do
-        use Csv.Schema, separator: ?,
+        use Csv.Schema, headers: true, separator: ?,
         alias Csv.Schema.Parser
 
         schema "path/to/person.csv" do
@@ -33,6 +33,8 @@ defmodule Csv.Schema do
     - `__MODULE__.filter_by_name/1` expecting string as arg
     - `__MODULE__.by_fiscal_code/1` expecting string as arg
     - `__MODULE__.get_all/0`
+
+    Some example definitions could be found [here](https://github.com/primait/csv_schema/tree/master/examples)
   """
 
   alias Csv.Schema
@@ -42,11 +44,14 @@ defmodule Csv.Schema do
   @doc """
   It's possible to set a :separator argument to macro to let the macro split csv
     for you using provided separator.
+    Moreover, if your csv file does not have headers, it's possible to set headers to false
+    and configure fields by index (1..N)
   """
   defmacro __using__(opts) do
     quote do
       import unquote(__MODULE__)
       @type t :: %__MODULE__{}
+      @headers Keyword.get(unquote(opts), :headers, true)
       @separator Keyword.get(unquote(opts), :separator, ?,)
     end
   end
@@ -60,7 +65,7 @@ defmodule Csv.Schema do
     quote do
       unquote do
         quote do
-          @content unquote(file_path) |> Parser.csv!(@separator)
+          @content unquote(file_path) |> Parser.csv!(@headers, @separator)
           @rows_count Enum.count(@content)
 
           Module.put_attribute(__MODULE__, :in_, true)
@@ -71,9 +76,7 @@ defmodule Csv.Schema do
 
           unquote(block)
 
-          Schema.__check_csv_has_fields__!(@content, @fields)
-          Schema.__check_key__!(@content, @fields)
-          Schema.__check_unique__!(@content, @fields)
+          Schema.__checks__!(@content, @fields, @headers)
 
           Module.delete_attribute(__MODULE__, :in_)
           Module.delete_attribute(__MODULE__, :separator)
@@ -102,14 +105,14 @@ defmodule Csv.Schema do
             end
           end
 
-          Schema.__gen_functions__(@content, @fields, internal_id_fn, by_fn, filter_by_fn)
+          Schema.__gen_functions__(@content, @fields, @headers, internal_id_fn, by_fn, filter_by_fn)
 
           # Defaults
 
           def unquote(:__id__)(_), do: nil
 
-          def get_all(:materialized), do: 1..@rows_count |> Enum.map(&__MODULE__.__id__/1)
           def get_all(), do: 1..@rows_count |> Stream.map(&__MODULE__.__id__/1)
+          def get_all(:materialized), do: 1..@rows_count |> Enum.map(&__MODULE__.__id__/1)
 
           default_by_fn = fn name -> def unquote(:"by_#{name}")(_), do: nil end
 
@@ -122,6 +125,7 @@ defmodule Csv.Schema do
           Module.delete_attribute(__MODULE__, :struct_fields)
           Module.delete_attribute(__MODULE__, :fields)
           Module.delete_attribute(__MODULE__, :content)
+          Module.delete_attribute(__MODULE__, :headers)
         end
       end
     end
@@ -129,18 +133,18 @@ defmodule Csv.Schema do
 
   @doc """
   Configure a new field (csv column). Parameters are
-  - `name`: new struct field name
-  - `header`: header name in csv file
-  - `opts`: list of configuration values
-    - `key`: boolean; at most one key must be set. It is something similar to a primary key
-    - `filter_by`: boolean; do i create a `filter_by_{name}` function for this field for you?
-    - `unique`: boolean; creates a function `by_{name}` for you
-    - `parser`: function; parser function used to get_changeset data from string to custom type
+  - `name` - new struct field name
+  - `column` - header name or column index (if headers: false) in csv file
+  - `opts` - list of configuration values
+    - `key` - boolean; at most one key must be set. It is something similar to a primary key
+    - `filter_by` - boolean; do i create a `filter_by_{name}` function for this field for you?
+    - `unique` - boolean; creates a function `by_{name}` for you
+    - `parser` - function; parser function used to get_changeset data from string to custom type
   """
-  defmacro field(name, header, opts \\ []) do
+  defmacro field(name, col, opts \\ []) do
     quote do
       if @in_ do
-        @fields Schema.__field__(__MODULE__, unquote(name), unquote(header), unquote(opts))
+        @fields Schema.__field__(__MODULE__, unquote(name), unquote(col), unquote(opts))
       else
         raise "Using 'field' macro outside 'schema' macro"
       end
@@ -149,16 +153,16 @@ defmodule Csv.Schema do
 
   @doc false
   @spec __field__(module, term, term, []) :: Field.t()
-  def __field__(mod, name, header, opts) do
+  def __field__(mod, name, col, opts) do
     name = Parser.atom!(name)
     add_field_to_struct(mod, name)
-    Field.new(name, header, opts)
+    Field.new(name, col, opts)
   end
 
   @spec add_field_to_struct(module, atom) :: :ok | no_return
   defp add_field_to_struct(mod, name) do
     if mod |> Module.get_attribute(:struct_fields) |> List.keyfind(name, 0) do
-      raise ArgumentError, "Field #{inspect(name)} is already set on schema"
+      raise ArgumentError, "Field #{inspect(name)} already set in schema"
     end
 
     Module.put_attribute(mod, :struct_fields, {name, nil})
@@ -168,22 +172,22 @@ defmodule Csv.Schema do
 
   @doc false
   @spec __gen_functions__(
-          [map],
+          %Stream{},
           [Field.t()],
+          boolean,
           (String.t(), map -> :ok),
           (atom, term, map -> :ok),
           (atom, term, [] -> :ok)
         ) :: :ok
-  def __gen_functions__(content, fields, internal_id_fn, by_fn, filter_by_fn) do
-    gen_by_functions(content, fields, internal_id_fn, by_fn)
-    gen_filter_by_functions(content, fields, filter_by_fn)
+  def __gen_functions__(content, fields, headers, internal_id_fn, by_fn, filter_by_fn) do
+    indexed_changesets = Stream.map(content, &to_changeset(&1, fields, headers))
+    gen_by_functions(indexed_changesets, fields, internal_id_fn, by_fn)
+    gen_filter_by_functions(indexed_changesets, fields, filter_by_fn)
   end
 
-  @spec gen_by_functions([map], [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
+  @spec gen_by_functions(%Stream{}, [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
   defp gen_by_functions(content, fields, internal_id_fn, by_fn) do
-    Enum.each(content, fn row ->
-      id = Map.get(row, :__id__)
-      changeset = get_changeset(row, fields)
+    Enum.each(content, fn {id, changeset} ->
       internal_id_fn.(id, changeset)
 
       Enum.each(fields, fn
@@ -201,13 +205,15 @@ defmodule Csv.Schema do
     end)
   end
 
-  @spec gen_filter_by_functions([map], [Field.t()], (atom, term, [] -> :ok)) :: :ok
-  defp gen_filter_by_functions(content, fields, filter_by_fn) do
+  @spec gen_filter_by_functions(%Stream{}, [Field.t()], (atom, term, [] -> :ok)) :: :ok
+  defp gen_filter_by_functions(indexed_changesets, fields, filter_by_fn) do
     Enum.each(fields, fn
       %Field{name: name, filter_by: true} ->
-        content
-        |> Enum.group_by(&Map.get(get_changeset(&1, fields), name))
-        |> Enum.each(fn {key, value} -> filter_by_fn.(name, key, Enum.map(value, & &1.__id__)) end)
+        indexed_changesets
+        |> Enum.group_by(fn {_, changeset} -> Map.get(changeset, name) end)
+        |> Enum.each(fn {key, values} ->
+          filter_by_fn.(name, key, Enum.map(values, fn {id, _} -> id end))
+        end)
 
       _ ->
         :ok
@@ -225,41 +231,55 @@ defmodule Csv.Schema do
     end)
   end
 
-  @spec get_changeset(map, [Field.t()]) :: map
-  defp get_changeset(row, fields) do
-    Enum.reduce(fields, %{}, fn %Field{name: name, header: header, parser: parser}, acc ->
-      Map.put(acc, name, parser.(Map.get(row, header)))
-    end)
+  @spec to_changeset(map, [Field.t()], boolean) :: {any, map}
+  defp to_changeset(row, fields, headers) do
+    {
+      get_value(row, :__id__, headers),
+      Enum.reduce(fields, %{}, fn %Field{name: name, column: column, parser: parser}, acc ->
+        Map.put(acc, name, parser.(get_value(row, column, headers)))
+      end)
+    }
   end
+
+  defp get_value(coll, elem, true), do: Map.get(coll, elem)
+  defp get_value(coll, :__id__, _), do: Enum.at(coll, 0)
+  defp get_value(coll, elem, _), do: Enum.at(coll, elem)
 
   ### Validations
 
+  @spec __checks__!([map | []], [Field.t()], boolean) :: :ok | no_return
+  def __checks__!(content, fields, headers) do
+    check_csv_has_fields!(content, fields, headers)
+    check_key!(content, fields, headers)
+    check_unique!(content, fields, headers)
+  end
+
   @doc false
-  @spec __check_key__!([map], [Field.t()]) :: :ok | no_return
-  def __check_key__!(content, fields) do
+  @spec check_key!([map | list], [Field.t()], boolean) :: :ok | no_return
+  defp check_key!(content, fields, headers) do
     case Enum.filter(fields, & &1.key) do
       [] -> :ok
-      [field] -> valid_key_field?(content, field)
-      fields -> raise "Multiple keys defined (#{fields |> Enum.map(& &1.header) |> Enum.join(", ")})"
+      [field] -> valid_key_field?(content, field, headers)
+      fields -> raise "Multiple keys defined (#{fields |> Enum.map(& &1.column) |> Enum.join(", ")})"
     end
   end
 
-  @spec valid_key_field?([map], [Field.t()]) :: :ok | no_return
-  defp valid_key_field?(content, field) do
-    values = Enum.map(content, &Map.get(&1, field.header))
+  @spec valid_key_field?([map], [Field.t()], boolean) :: :ok | no_return
+  defp valid_key_field?(content, field, headers) do
+    values = Enum.map(content, &get_value(&1, field.column, headers))
 
     unique = values |> Enum.uniq() |> Enum.reject(fn value -> is_nil(value) || value == "" end) |> Enum.count()
 
     if Enum.count(values) != unique do
-      raise "Key field #{field.header} contains empty, nil or not unique records: #{inspect(duplicates(values))}"
+      raise "Key field #{field.column} contains empty, nil or not unique values: #{inspect(duplicates(values))}"
     else
       :ok
     end
   end
 
   @doc false
-  @spec __check_csv_has_fields__!([map], [Field.t()]) :: :ok | no_return
-  def __check_csv_has_fields__!(content, fields) do
+  @spec check_csv_has_fields!([map | []], [Field.t()], boolean) :: :ok | no_return
+  defp check_csv_has_fields!(content, fields, true) do
     content
     |> Enum.take(1)
     |> Enum.each(fn row ->
@@ -267,30 +287,44 @@ defmodule Csv.Schema do
     end)
   end
 
+  defp check_csv_has_fields!(content, fields, _) do
+    content
+    |> Enum.take(1)
+    |> Enum.each(fn row ->
+      fields
+      |> Enum.map(fn %Field{column: column} -> column end)
+      |> Enum.reject(fn column -> column in 1..(length(row) - 1) end)
+      |> case do
+        [] -> :ok
+        cl -> raise "Indexes #{inspect(cl)} should be between 1 and #{length(row)}"
+      end
+    end)
+  end
+
   @spec match_all_fields?(map, [Field.t()]) :: boolean
   defp match_all_fields?(row, fields) do
-    Enum.all?(fields, fn %Field{header: header} -> Map.has_key?(row, header) end)
+    Enum.all?(fields, fn %Field{column: column} -> Map.has_key?(row, column) end)
   end
 
   @doc false
-  @spec __check_unique__!([tuple], [Field.t()]) :: :ok | no_return
-  def __check_unique__!(content, fields) do
+  @spec check_unique!([tuple], [Field.t()], boolean) :: :ok | no_return
+  def check_unique!(content, fields, headers) do
     Enum.each(fields, fn
-      %Field{header: header, key: true} -> unique_or_raise!(content, header)
-      %Field{header: header, unique: true} -> unique_or_raise!(content, header)
+      %Field{column: column, key: true} -> unique_or_raise!(content, column, headers)
+      %Field{column: column, unique: true} -> unique_or_raise!(content, column, headers)
       _ -> :ok
     end)
   end
 
-  @spec unique_or_raise!([tuple], term) :: :ok | no_return
-  defp unique_or_raise!(content, header) do
+  @spec unique_or_raise!([tuple], term, boolean) :: :ok | no_return
+  defp unique_or_raise!(content, column, headers) do
     values =
       content
-      |> Enum.map(&Map.get(&1, header))
+      |> Enum.map(&get_value(&1, column, headers))
       |> Enum.reject(fn value -> is_nil(value) || value == "" end)
 
     if Enum.count(values) != values |> Enum.uniq() |> Enum.count() do
-      raise "Field #{header}, set as unique, contains duplicates: #{inspect(duplicates(values))}"
+      raise "Field #{column}, set as unique, contains duplicates: #{inspect(duplicates(values))}"
     else
       :ok
     end

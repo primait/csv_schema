@@ -11,7 +11,7 @@ defmodule BroTest do
   end
 
   test "Get by unique field. When field value exists in csv returns a bro" do
-    assert Bro.by_email("mchaplyn9@sciencedaily.com").__struct__ == Bro
+    assert Bro.by_email("pscotteru@scribd.com").__struct__ == Bro
   end
 
   test "Get by unique field. When field value doesn't exists in csv returns nil" do
@@ -19,7 +19,7 @@ defmodule BroTest do
   end
 
   test "Filter by field. When value matches returns array of bros" do
-    assert "Male" |> Bro.filter_by_gender() |> Enum.count() == 24
+    assert "Male" |> Bro.filter_by_gender() |> Enum.count() == 494
   end
 
   test "Filter by field. When value doesn't match return empty array" do
@@ -27,6 +27,6 @@ defmodule BroTest do
   end
 
   test "Get all returns all bros" do
-    assert Bro.get_all() |> Enum.count() == 50
+    assert Bro.get_all() |> Enum.count() == 1000
   end
 end
