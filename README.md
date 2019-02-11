@@ -59,8 +59,26 @@ For example the following field configuration will result in a compilation error
 field :id, "non_existing_id", ....
 ```
 
-Moreover it's possible to pass to `use Csv.Schema` the `:separator` param. This
-let the macro split csv for you using provided separator.
+Schema could be configured using a custom separator
+```elixir
+use Csv.Schema, separator: ?,
+```
+
+Moreover it's possible to configure if csv file has or has not an header. Depending
+on header param value field config changes
+```elixir
+# Csv with header
+schema "path/to/person.csv" do
+  field :id, "id", key: true
+  ...
+end
+
+# Csv without header. Note that field 1 is binded with the first csv column. Index goes from 1 to N
+schema "path/to/person.csv" do
+  field :id, 1, key: true
+  ...
+end
+```
 
 Now Person module is a struct, defined like this:
 
@@ -97,10 +115,6 @@ Where:
 - `filter_by_gender` returns a `[%Person{}, %Person{}, ...]` or `[]` if input predicate does not match any person gender
 - `get_all` return all csv rows as a Stream
 
-Note: if @auto_primary_key is set to `true` this macro creates automatically a new column called `id`
-(and new `by_id` method). Its value is a progressive integer; otherwise you have to set a key opt
-to the field that should be key
-
 ## Field configuration
 
 Every field should be formed like this:
@@ -128,32 +142,32 @@ Compilation time increase in a linear manner if csv contains lots of lines and y
 configure multiple fields candidate for method creation (flags `key`, `unique` and/or `filter_by` set to true)
 Because "without data you're just another person with an opinion" here some data
 
-csv rows | key | unique | filter_by | compile time ms
+csv rows | key | unique | filter_by | compile time µs
 --------:|:---:|:------:|:---------:|----------------:
-1_000    | no  | 0      | 0         | 22 ms
-1_000    | yes | 1      | 1         | 19 ms
-1_000    | yes | 2      | 2         | 21 ms
-1_000    | yes | 2      | 4         | 29 ms
-1_000    | yes | 2      | 0         | 15 ms
-1_000    | yes | 0      | 4         | 26 ms
-1_000    | no  | 2      | 0         | 12 ms
-1_000    | no  | 0      | 4         | 22 ms
-5_000    | no  | 0      | 0         | 555 ms
-5_000    | yes | 1      | 1         | 1_695 ms
-5_000    | yes | 2      | 2         | 2_341 ms
-5_000    | yes | 2      | 4         | 3_273 ms
-5_000    | yes | 2      | 0         | 1_976 ms
-5_000    | yes | 0      | 4         | 2_698 ms
-5_000    | no  | 2      | 0         | 1_559 ms
-5_000    | no  | 0      | 4         | 2_146 ms
-10_000   | no  | 0      | 0         | 1_701 ms
-10_000   | yes | 1      | 1         | 3_624 ms
-10_000   | yes | 2      | 2         | 5_169 ms
-10_000   | yes | 2      | 4         | 6_988 ms
-10_000   | yes | 2      | 0         | 4_279 ms
-10_000   | yes | 0      | 4         | 5_638 ms
-10_000   | no  | 2      | 0         | 3_278 ms
-10_000   | no  | 0      | 4         | 4_846 ms
+1_000    | no  | 0      | 0         |    419 ms
+1_000    | yes | 1      | 1         |  1_980 ms
+1_000    | yes | 2      | 2         |  2_542 ms
+1_000    | yes | 2      | 4         |  3_565 ms
+1_000    | yes | 2      | 0         |  1_758 ms
+1_000    | yes | 0      | 4         |  2_090 ms
+1_000    | no  | 2      | 0         |  1_634 ms
+1_000    | no  | 0      | 4         |  1_971 ms
+5_000    | no  | 0      | 0         |  2_410 ms
+5_000    | yes | 1      | 1         | 15_282 ms
+5_000    | yes | 2      | 2         | 22_478 ms
+5_000    | yes | 2      | 4         | 28_060 ms
+5_000    | yes | 2      | 0         | 16_254 ms
+5_000    | yes | 0      | 4         | 15_043 ms
+5_000    | no  | 2      | 0         | 14_518 ms
+5_000    | no  | 0      | 4         | 12_931 ms
+10_000   | no  | 0      | 0         |  4_962 ms
+10_000   | yes | 1      | 1         | 28_995 ms
+10_000   | yes | 2      | 2         | 42_817 ms
+10_000   | yes | 2      | 4         | 54_759 ms
+10_000   | yes | 2      | 0         | 37_166 ms
+10_000   | yes | 0      | 4         | 29_913 ms
+10_000   | no  | 2      | 0         | 33_578 ms
+10_000   | no  | 0      | 4         | 29_096 ms
 
 5 compilations average time.
 
