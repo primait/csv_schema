@@ -235,15 +235,24 @@ defmodule Csv.Schema do
   defp to_changeset(row, fields, headers) do
     {
       get_value(row, :__id__, headers),
-      Enum.reduce(fields, %{}, fn %Field{name: name, column: column, parser: parser}, acc ->
-        Map.put(acc, name, parser.(get_value(row, column, headers)))
+      Enum.reduce(fields, %{}, fn %Field{name: name, column: column, parser: parser, join: join}, acc ->
+        Map.put(acc, name, parser.(get_value(row, column, headers, join)))
       end)
     }
   end
 
-  defp get_value(coll, elem, true), do: Map.get(coll, elem)
-  defp get_value(coll, :__id__, _), do: Enum.at(coll, 0)
-  defp get_value(coll, elem, _), do: Enum.at(coll, elem)
+  @spec get_value(map | list, String.t() | atom | number, boolean, String.t()) :: term
+  defp get_value(collection, cols, header, join \\ "")
+
+  defp get_value(collection, cols, header, join) when is_list(cols) do
+    cols
+    |> Enum.map(fn column -> get_value(collection, column, header, join) end)
+    |> Enum.join(join)
+  end
+
+  defp get_value(collection, elem, true, _), do: Map.get(collection, elem)
+  defp get_value(collection, :__id__, _, _), do: Enum.at(collection, 0)
+  defp get_value(collection, elem, _, _), do: Enum.at(collection, elem)
 
   ### Validations
 
@@ -266,7 +275,7 @@ defmodule Csv.Schema do
 
   @spec valid_key_field?([map], [Field.t()], boolean) :: :ok | no_return
   defp valid_key_field?(content, field, headers) do
-    values = Enum.map(content, &get_value(&1, field.column, headers))
+    values = Enum.map(content, &get_value(&1, field.column, headers, field.join))
 
     unique = values |> Enum.uniq() |> Enum.reject(fn value -> is_nil(value) || value == "" end) |> Enum.count()
 
@@ -293,7 +302,10 @@ defmodule Csv.Schema do
     |> Enum.each(fn row ->
       fields
       |> Enum.map(fn %Field{column: column} -> column end)
-      |> Enum.reject(fn column -> column in 1..(length(row) - 1) end)
+      |> Enum.reject(fn
+        column when is_list(column) -> Enum.all?(column, fn col -> col in 1..(length(row) - 1) end)
+        column -> column in 1..(length(row) - 1)
+      end)
       |> case do
         [] -> :ok
         cl -> raise "Indexes #{inspect(cl)} should be between 1 and #{length(row)}"
@@ -303,24 +315,27 @@ defmodule Csv.Schema do
 
   @spec match_all_fields?(map, [Field.t()]) :: boolean
   defp match_all_fields?(row, fields) do
-    Enum.all?(fields, fn %Field{column: column} -> Map.has_key?(row, column) end)
+    Enum.all?(fields, fn
+      %Field{column: column} when is_list(column) -> Enum.all?(column, &Map.has_key?(row, &1))
+      %Field{column: column} -> Map.has_key?(row, column)
+    end)
   end
 
   @doc false
   @spec check_unique!([tuple], [Field.t()], boolean) :: :ok | no_return
   def check_unique!(content, fields, headers) do
     Enum.each(fields, fn
-      %Field{column: column, key: true} -> unique_or_raise!(content, column, headers)
-      %Field{column: column, unique: true} -> unique_or_raise!(content, column, headers)
+      %Field{column: column, key: true, join: join} -> unique_or_raise!(content, column, headers, join)
+      %Field{column: column, unique: true, join: join} -> unique_or_raise!(content, column, headers, join)
       _ -> :ok
     end)
   end
 
-  @spec unique_or_raise!([tuple], term, boolean) :: :ok | no_return
-  defp unique_or_raise!(content, column, headers) do
+  @spec unique_or_raise!([tuple], term, boolean, String.t()) :: :ok | no_return
+  defp unique_or_raise!(content, column, headers, join) do
     values =
       content
-      |> Enum.map(&get_value(&1, column, headers))
+      |> Enum.map(&get_value(&1, column, headers, join))
       |> Enum.reject(fn value -> is_nil(value) || value == "" end)
 
     if Enum.count(values) != values |> Enum.uniq() |> Enum.count() do
