@@ -67,6 +67,7 @@ defmodule Csv.Schema do
         quote do
           @content unquote(file_path) |> Parser.csv!(@headers, @separator)
           @rows_count Enum.count(@content)
+          @external_resource unquote(file_path)
 
           Module.put_attribute(__MODULE__, :in_, true)
 
