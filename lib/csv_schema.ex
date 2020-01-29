@@ -38,8 +38,10 @@ defmodule Csv.Schema do
   """
 
   alias Csv.Schema
-  alias Csv.Schema.Parser
-  alias Csv.Schema.Field
+  alias Csv.Schema.{Field, Parser}
+
+  @type changeset :: list({any, map})
+  @type order :: :asc | :desc
 
   @doc """
   It's possible to set a :separator argument to macro to let the macro split csv
@@ -181,14 +183,14 @@ defmodule Csv.Schema do
           (atom, term, [] -> :ok)
         ) :: :ok
   def __gen_functions__(content, fields, headers, internal_id_fn, by_fn, filter_by_fn) do
-    indexed_changesets = Stream.map(content, &to_changeset(&1, fields, headers))
+    indexed_changesets = content |> Enum.map(&to_changeset(&1, fields, headers)) |> sort_changeset(fields)
     gen_by_functions(indexed_changesets, fields, internal_id_fn, by_fn)
     gen_filter_by_functions(indexed_changesets, fields, filter_by_fn)
   end
 
-  @spec gen_by_functions(%Stream{}, [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
-  defp gen_by_functions(content, fields, internal_id_fn, by_fn) do
-    Enum.each(content, fn {id, changeset} ->
+  @spec gen_by_functions(changeset, [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
+  defp gen_by_functions(indexed_changesets, fields, internal_id_fn, by_fn) do
+    Enum.each(indexed_changesets, fn {id, changeset} ->
       internal_id_fn.(id, changeset)
 
       Enum.each(fields, fn
@@ -206,7 +208,7 @@ defmodule Csv.Schema do
     end)
   end
 
-  @spec gen_filter_by_functions(%Stream{}, [Field.t()], (atom, term, [] -> :ok)) :: :ok
+  @spec gen_filter_by_functions(changeset, [Field.t()], (atom, term, [] -> :ok)) :: :ok
   defp gen_filter_by_functions(indexed_changesets, fields, filter_by_fn) do
     Enum.each(fields, fn
       %Field{name: name, filter_by: true} ->
@@ -231,6 +233,25 @@ defmodule Csv.Schema do
       _ -> :ok
     end)
   end
+
+  @spec sort_changeset(changeset, list(Field.t())) :: changeset
+  defp sort_changeset(changeset, fields) do
+    Enum.reduce(fields, changeset, fn
+      %Field{sort: nil}, cs ->
+        cs
+
+      %Field{name: name, sort: sort}, cs ->
+        Enum.sort_by(cs, fn {_, map} -> Map.get(map, name) end, &sorter(&1, &2, sort))
+    end)
+  end
+
+  @spec sorter(any, any, order) :: boolean
+  defp sorter(nil, _, :asc), do: false
+  defp sorter(nil, _, :desc), do: true
+  defp sorter(_, nil, :asc), do: true
+  defp sorter(_, nil, :desc), do: false
+  defp sorter(value1, value2, :asc), do: value1 <= value2
+  defp sorter(value1, value2, :desc), do: value1 > value2
 
   @spec to_changeset(map, [Field.t()], boolean) :: {any, map}
   defp to_changeset(row, fields, headers) do

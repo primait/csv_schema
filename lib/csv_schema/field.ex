@@ -9,6 +9,7 @@ defmodule Csv.Schema.Field do
             key: false,
             unique: false,
             filter_by: false,
+            sort: nil,
             join: ""
 
   @type t :: %__MODULE__{}
@@ -36,6 +37,7 @@ defmodule Csv.Schema.Field do
       key: Keyword.get(opts, :key, false),
       unique: Keyword.get(opts, :unique, false),
       filter_by: Keyword.get(opts, :filter_by, false),
+      sort: Keyword.get(opts, :sort, nil),
       join: Keyword.get(opts, :join, "")
     )
   end
