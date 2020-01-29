@@ -4,12 +4,13 @@ defmodule Csv.Schema.MixProject do
   def project do
     [
       app: :csv_schema,
-      version: "0.2.3",
+      version: "0.2.4",
       elixir: "~> 1.6",
       elixirc_paths: elixir_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       description: description(),
       package: package(),
       dialyzer: [
@@ -39,6 +40,13 @@ defmodule Csv.Schema.MixProject do
 
   defp description do
     "A library to build in-code schema starting from csv files"
+  end
+
+  defp aliases do
+    [
+      "format.check": ["format --check-formatted mix.exs 'lib/**/*.{ex,exs}' 'test/**/*.{ex,exs}' 'config/*.{ex, exs}'"],
+      check: ["format.check", "credo -a", "dialyzer"]
+    ]
   end
 
   defp package do

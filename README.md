@@ -40,7 +40,7 @@ defmodule Person do
   alias Csv.Schema.Parser
 
   schema "path/to/person.csv" do
-    field :id, "id", key: true
+    field :id, "id"
     field :first_name, "first_name", filter_by: true
     field :last_name, "last_name", sort: :asc
     field :identifier, ["first_name", "last_name"], key: true, join: " "

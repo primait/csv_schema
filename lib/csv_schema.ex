@@ -143,10 +143,10 @@ defmodule Csv.Schema do
   - `name` - new struct field name
   - `column` - header name or column index (if headers: false) in csv file
   - `opts` - list of configuration values
-    - `key` - boolean; at most one key must be set. It is something similar to a primary key
-    - `unique` - boolean; creates a function `by_{name}` for you
-    - `filter_by` - boolean; do i create a `filter_by_{name}` function for this field for you?
-    - `parser` - function; parser function used to get_changeset data from string to custom type
+    - `:key` - boolean; at most one key must be set. It is something similar to a primary key
+    - `:unique` - boolean; creates a function `by_{name}` for you
+    - `:filter_by` - boolean; do i create a `filter_by_{name}` function for this field for you?
+    - `:parser` - function; parser function used to get_changeset data from string to custom type
     - `:sort` - `:asc` or `:desc`; It sorts according to Erlang's term ordering with `nil` exception
     - `:join` - string; if present it joins the given fields into a binary using the separator
   """
@@ -349,9 +349,8 @@ defmodule Csv.Schema do
     end)
   end
 
-  @doc false
   @spec check_unique!([tuple], [Field.t()], boolean) :: :ok | no_return
-  def check_unique!(content, fields, headers) do
+  defp check_unique!(content, fields, headers) do
     Enum.each(fields, fn
       %Field{column: column, key: true, join: join} -> unique_or_raise!(content, column, headers, join)
       %Field{column: column, unique: true, join: join} -> unique_or_raise!(content, column, headers, join)
