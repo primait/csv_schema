@@ -4,7 +4,7 @@ defmodule Csv.Schema.MixProject do
   def project do
     [
       app: :csv_schema,
-      version: "0.2.1",
+      version: "0.2.2",
       elixir: "~> 1.6",
       elixirc_paths: elixir_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
@@ -31,7 +31,7 @@ defmodule Csv.Schema.MixProject do
       {:csv, "~> 2.1"},
       {:timex, "~> 3.1"},
       {:credo, "~> 1.0", only: [:dev, :test]},
-      {:dialyxir, "1.0.0-rc.4", only: :dev, runtime: false},
+      {:dialyxir, "1.0.0-rc.7", only: :dev, runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end
