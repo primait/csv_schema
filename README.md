@@ -32,7 +32,7 @@ id  | first_name | last_name  | email                         | gender | ip_addr
 3   | Chloe      | Freemantle | cfreemantle2@parallels.com    | Female | 133.133.113.255 | 08/13/2018
 ... | ...        | ...        | ...                           | ...    | ...             | ...
 
-Is possible to create an Ecto.Schema-like repository using `Csv.Schema` macro
+Is possible to create an Ecto.Schema-like repository using `Csv.Schema` macro:
 
 ```elixir
 defmodule Person do
@@ -42,9 +42,10 @@ defmodule Person do
   schema "path/to/person.csv" do
     field :id, "id", key: true
     field :first_name, "first_name", filter_by: true
-    field :last_name, "last_name"
+    field :last_name, "last_name", sort: :asc
+    field :identifier, ["first_name", "last_name"], key: true, join: " "
     field :email, "email", unique: true
-    field :gender, "gender", filter_by: true
+    field :gender, "gender", filter_by: true, sort: :desc
     field :ip_address, "ip_address"
     field :date_of_birth, "date_of_birth", parser: &Parser.date!(&1, "{0M}/{0D}/{0YYYY}")
   end
@@ -53,7 +54,7 @@ end
 
 Note that it's not a requirement to map all fields, but every field mapped must
 have a column in csv file.
-For example the following field configuration will result in a compilation error
+For example the following field configuration will result in a compilation error:
 
 ```elixir
 field :id, "non_existing_id", ....
@@ -65,7 +66,7 @@ use Csv.Schema, separator: ?,
 ```
 
 Moreover it's possible to configure if csv file has or has not an header. Depending
-on header param value field config changes
+on header param value field config changes:
 ```elixir
 # Csv with header
 schema "path/to/person.csv" do
@@ -73,7 +74,8 @@ schema "path/to/person.csv" do
   ...
 end
 
-# Csv without header. Note that field 1 is binded with the first csv column. Index goes from 1 to N
+# Csv without header. Note that field 1 is binded with the first csv column.
+# Index goes from 1 to N
 schema "path/to/person.csv" do
   field :id, 1, key: true
   ...
@@ -129,18 +131,22 @@ where:
 - `{opts}` is a keyword list containing special configurations
 
 opts:
-- `:key`: boolean. At most one key could be set. If set to true creates the `by_{name}` function for you.
-- `:unique`: boolean. If set to true creates the `by_{name}` function for you. All csv values must be unique or an exception is raised
-- `:filter_by`: boolean. If set to true creates the `filter_by_{name}` function
-- `:parser`: function. An arity 1 function used to map values from string to a custom type
+- `:key` : boolean. At most one key could be set. If set to true creates the `by_{name}` function for you.
+- `:unique` : boolean. If set to true creates the `by_{name}` function for you. All csv values must be unique or an exception is raised
+- `:filter_by` : boolean. If set to true creates the `filter_by_{name}` function
+- `:parser` : function. An arity 1 function used to map values from string to a custom type
+- `:sort` : `:asc` or `:desc`. It sorts according to Erlang's term ordering with `nil` exception (`number < atom < reference < fun < port < pid < tuple < list < bit-string < nil`)
+- `:join` : string. If present it joins the given fields into a binary using the separator
+
 
 Note that every configuration is optional
 
 ## Keep in mind
 
 Compilation time increase in an exponential manner if csv contains lots of lines and you
-configure multiple fields candidate for method creation (flags `key`, `unique` and/or `filter_by` set to true)
-Because "without data you're just another person with an opinion" here some data
+configure multiple fields candidate for method creation (flags `key`, `unique` and/or `filter_by` set to true).
+
+Because "without data you're just another person with an opinion" here some data:
 
 csv rows | key | unique | filter_by | compile time ms
 --------:|:---:|:------:|:---------:|----------------:

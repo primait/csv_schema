@@ -12,10 +12,14 @@ defmodule Csv.Schema do
         alias Csv.Schema.Parser
 
         schema "path/to/person.csv" do
-          field :id, "ID", key: true, parser: &Parser.integer!/1
-          field :name, "Name", filter_by: true
-          field :fiscal_code, "Fiscal Code", unique: true
-          field :birth, "Date of birth", parser: &Parser.date!(&1, "{0D}/{0M}/{0YYYY}")
+          field :id, "id", key: true
+          field :first_name, "first_name", filter_by: true
+          field :last_name, "last_name", sort: :asc
+          field :identifier, ["first_name", "last_name"], key: true, join: " "
+          field :email, "email", unique: true
+          field :gender, "gender", filter_by: true, sort: :desc
+          field :ip_address, "ip_address"
+          field :date_of_birth, "date_of_birth", parser: &Parser.date!(&1, "{0M}/{0D}/{0YYYY}")
         end
       end
 
@@ -45,9 +49,9 @@ defmodule Csv.Schema do
 
   @doc """
   It's possible to set a :separator argument to macro to let the macro split csv
-    for you using provided separator.
-    Moreover, if your csv file does not have headers, it's possible to set headers to false
-    and configure fields by index (1..N)
+  for you using provided separator.
+  Moreover, if your csv file does not have headers, it's possible to set headers to false
+  and configure fields by index (1..N)
   """
   defmacro __using__(opts) do
     quote do
@@ -59,7 +63,7 @@ defmodule Csv.Schema do
   end
 
   @doc """
-  schema macro helps you to build a block of fields. First parameter should be
+  Schema macro helps you to build a block of fields. First parameter should be
   the relative path to csv file in your project. Second parameter should be a `field` list
   included in `do`-`end` block
   """
@@ -140,9 +144,11 @@ defmodule Csv.Schema do
   - `column` - header name or column index (if headers: false) in csv file
   - `opts` - list of configuration values
     - `key` - boolean; at most one key must be set. It is something similar to a primary key
-    - `filter_by` - boolean; do i create a `filter_by_{name}` function for this field for you?
     - `unique` - boolean; creates a function `by_{name}` for you
+    - `filter_by` - boolean; do i create a `filter_by_{name}` function for this field for you?
     - `parser` - function; parser function used to get_changeset data from string to custom type
+    - `:sort` - `:asc` or `:desc`; It sorts according to Erlang's term ordering with `nil` exception
+    - `:join` - string; if present it joins the given fields into a binary using the separator
   """
   defmacro field(name, col, opts \\ []) do
     quote do
