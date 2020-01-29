@@ -138,11 +138,11 @@ Note that every configuration is optional
 
 ## Keep in mind
 
-Compilation time increase in a linear manner if csv contains lots of lines and you
+Compilation time increase in an exponential manner if csv contains lots of lines and you
 configure multiple fields candidate for method creation (flags `key`, `unique` and/or `filter_by` set to true)
 Because "without data you're just another person with an opinion" here some data
 
-csv rows | key | unique | filter_by | compile time µs
+csv rows | key | unique | filter_by | compile time ms
 --------:|:---:|:------:|:---------:|----------------:
 1_000    | no  | 0      | 0         |    419 ms
 1_000    | yes | 1      | 1         |  1_980 ms
