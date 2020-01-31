@@ -1,4 +1,4 @@
-defmodule Man do
+defmodule Man.Asc do
   @moduledoc """
   In Man example i use csv's primary key, a different separator and index for fields
   """
@@ -12,7 +12,7 @@ defmodule Man do
     field :last_name, 3
     field :email, 4, unique: true
     field :gender, 5, filter_by: true
-    field :ip_address, 6
+    field :ip_address, 6, sort: :asc
     field :date_of_birth, 7, parser: &date!(&1, "{0M}/{0D}/{0YYYY}")
   end
 end
