@@ -7,7 +7,7 @@ defmodule Csv.Schema.Parser do
   Given a csv file path try to parse as csv with headers. Use list of maps as
   data representation
   """
-  @spec csv!(String.t(), boolean, pos_integer) :: map | no_return
+  @spec csv!(String.t(), boolean, pos_integer) :: %Stream{} | no_return
   def csv!(path, headers, separator = ?;), do: csv(path, headers, separator)
   def csv!(path, headers, separator = ?,), do: csv(path, headers, separator)
   def csv!(path, headers, separator = ?\t), do: csv(path, headers, separator)
@@ -17,15 +17,11 @@ defmodule Csv.Schema.Parser do
     path
     |> File.stream!()
     |> CSV.decode(separator: separator, headers: headers)
-    |> Stream.with_index(1)
     |> Stream.map(fn
-      {{:error, reason}, _} -> raise "Failed to parse line with reason #{reason}"
-      {{:ok, row}, idx} -> with_index(row, idx, headers)
+      {:error, reason} -> raise "Failed to parse line with reason #{reason}"
+      {:ok, row} -> row
     end)
   end
-
-  defp with_index(row, idx, true), do: Map.put(row, :__id__, idx)
-  defp with_index(row, idx, _), do: [idx | row]
 
   @doc """
   Having a string or an atom as input cast value to atom. If something else is given

@@ -25,9 +25,9 @@ defmodule Csv.Schema do
 
     At the end of compilation now your module is a Struct and has 3 kind of getters:
 
-    - `by_{key_field_name}` -> returns single records object or nil
-    - `filter_by_{field_name}` -> returns list of records matching provided property
-    - `get_all` -> returns all records
+    - `by_{key_field_name}` returns single records object or nil
+    - `filter_by_{field_name}` returns list of records matching provided property
+    - `get_all` returns all records
 
 
     Back to the example in the module will be created:
@@ -44,14 +44,13 @@ defmodule Csv.Schema do
   alias Csv.Schema
   alias Csv.Schema.{Field, Parser}
 
-  @type changeset :: list({any, map})
+  @type name :: String.t() | atom
+  @type row :: map | list
   @type order :: :asc | :desc
 
   @doc """
-  It's possible to set a :separator argument to macro to let the macro split csv
-  for you using provided separator.
-  Moreover, if your csv file does not have headers, it's possible to set headers to false
-  and configure fields by index (1..N)
+  - `separator` it's possible to set a separator argument to macro to let the macro split csv for you using provided separator.
+  - `header`    if your csv file does not have `headers`, it's possible to set headers to false and configure fields by index (1..N)
   """
   defmacro __using__(opts) do
     quote do
@@ -71,10 +70,7 @@ defmodule Csv.Schema do
     quote do
       unquote do
         quote do
-          @content unquote(file_path) |> Parser.csv!(@headers, @separator)
-          @rows_count Enum.count(@content)
-          @external_resource unquote(file_path)
-
+          Module.put_attribute(__MODULE__, :external_resource, unquote(file_path))
           Module.put_attribute(__MODULE__, :in_, true)
 
           Module.register_attribute(__MODULE__, :fields, accumulate: true)
@@ -83,55 +79,63 @@ defmodule Csv.Schema do
 
           unquote(block)
 
-          Schema.__checks__!(@content, @fields, @headers)
-
           Module.delete_attribute(__MODULE__, :in_)
-          Module.delete_attribute(__MODULE__, :separator)
         end
       end
 
       unquote do
-        quote unquote: false do
-          defstruct @struct_fields
+        quote bind_quoted: [file_path: file_path] do
+          defstruct Module.get_attribute(__MODULE__, :struct_fields)
 
-          # Functions
+          fields = Module.get_attribute(__MODULE__, :fields)
+          headers? = Module.get_attribute(__MODULE__, :headers)
+          separator = Module.get_attribute(__MODULE__, :separator)
+          content = Parser.csv!(file_path, headers?, separator)
+          num_of_rows = Enum.count(content)
 
-          internal_id_fn = fn value, changeset ->
-            def unquote(:__id__)(unquote(value)) do
-              struct!(__MODULE__, unquote(Macro.escape(changeset)))
+          #
+          ## Validation
+          #
+          Schema.__validate__(content, fields, headers?)
+
+          #
+          ## Destination module function generators
+          #
+          generators = %{
+            internal_id: fn id, changeset ->
+              changeset = Map.delete(changeset, :__id__)
+              def __id__(unquote(id)), do: struct!(__MODULE__, unquote(Macro.escape(changeset)))
+            end,
+            default_internal_id: fn ->
+              def __id__(_), do: nil
+            end,
+            by: fn translation, name ->
+              def unquote(:"by_#{name}")(value) do
+                apply(__MODULE__, :__id__, [Map.get(unquote(Macro.escape(translation)), value)])
+              end
+            end,
+            filter_by: fn translation, name ->
+              def unquote(:"filter_by_#{name}")(value) do
+                unquote(Macro.escape(translation)) |> Map.get(value, []) |> Enum.map(&apply(__MODULE__, :__id__, [&1]))
+              end
+            end,
+            get_all: fn num_of_rows ->
+              def get_all(), do: 1..unquote(num_of_rows) |> Stream.map(&apply(__MODULE__, :__id__, [&1]))
+              def get_all(:materialized), do: 1..unquote(num_of_rows) |> Enum.map(&apply(__MODULE__, :__id__, [&1]))
             end
-          end
+          }
 
-          by_fn = fn name, value, id ->
-            def unquote(:"by_#{name}")(unquote(value)), do: apply(__MODULE__, :__id__, [unquote(id)])
-          end
+          #
+          ## Generation
+          #
+          Schema.__gen__(content, fields, generators)
 
-          filter_by_fn = fn name, value, ids ->
-            def unquote(:"filter_by_#{name}")(unquote(value)) do
-              unquote(Macro.escape(ids)) |> Enum.map(&apply(__MODULE__, :__id__, [&1]))
-            end
-          end
-
-          Schema.__gen_functions__(@content, @fields, @headers, internal_id_fn, by_fn, filter_by_fn)
-
-          # Defaults
-
-          def unquote(:__id__)(_), do: nil
-
-          def get_all(), do: 1..@rows_count |> Stream.map(&__MODULE__.__id__/1)
-          def get_all(:materialized), do: 1..@rows_count |> Enum.map(&__MODULE__.__id__/1)
-
-          default_by_fn = fn name -> def unquote(:"by_#{name}")(_), do: nil end
-
-          default_filter_by_fn = fn name -> def unquote(:"filter_by_#{name}")(_), do: [] end
-
-          Schema.__gen_defaults__(@fields, default_by_fn, default_filter_by_fn)
-
-          # Cleanup
-
+          #
+          ## Cleanup
+          #
+          Module.delete_attribute(__MODULE__, :separator)
           Module.delete_attribute(__MODULE__, :struct_fields)
           Module.delete_attribute(__MODULE__, :fields)
-          Module.delete_attribute(__MODULE__, :content)
           Module.delete_attribute(__MODULE__, :headers)
         end
       end
@@ -152,7 +156,7 @@ defmodule Csv.Schema do
   """
   defmacro field(name, col, opts \\ []) do
     quote do
-      if @in_ do
+      if Module.get_attribute(__MODULE__, :in_, false) do
         @fields Schema.__field__(__MODULE__, unquote(name), unquote(col), unquote(opts))
       else
         raise "Using 'field' macro outside 'schema' macro"
@@ -162,92 +166,109 @@ defmodule Csv.Schema do
 
   @doc false
   @spec __field__(module, term, term, []) :: Field.t()
-  def __field__(mod, name, col, opts) do
+  def __field__(module, name, column, options) do
     name = Parser.atom!(name)
-    add_field_to_struct(mod, name)
-    Field.new(name, col, opts)
-  end
 
-  @spec add_field_to_struct(module, atom) :: :ok | no_return
-  defp add_field_to_struct(mod, name) do
-    if mod |> Module.get_attribute(:struct_fields) |> List.keyfind(name, 0) do
+    if module |> Module.get_attribute(:struct_fields) |> List.keyfind(name, 0) do
       raise ArgumentError, "Field #{inspect(name)} already set in schema"
     end
 
-    Module.put_attribute(mod, :struct_fields, {name, nil})
+    Module.put_attribute(module, :struct_fields, {name, nil})
+
+    Field.new(name, column, options)
   end
 
-  ### Internal method creations
-
+  #
+  ## Entrypoint for function generation
+  #
   @doc false
-  @spec __gen_functions__(
-          %Stream{},
-          [Field.t()],
-          boolean,
-          (String.t(), map -> :ok),
-          (atom, term, map -> :ok),
-          (atom, term, [] -> :ok)
-        ) :: :ok
-  def __gen_functions__(content, fields, headers, internal_id_fn, by_fn, filter_by_fn) do
-    indexed_changesets = content |> Enum.map(&to_changeset(&1, fields, headers)) |> sort_changeset(fields)
-    gen_by_functions(indexed_changesets, fields, internal_id_fn, by_fn)
-    gen_filter_by_functions(indexed_changesets, fields, filter_by_fn)
+  @spec __gen__(%Stream{}, list(Field.t()), %{atom => function}) :: :ok
+  def __gen__(csv_stream, fields, generators) do
+    changesets = get_changesets(csv_stream, fields)
+
+    gen_internal_id(changesets, Map.fetch!(generators, :internal_id), Map.fetch!(generators, :default_internal_id))
+    gen_by(changesets, fields, Map.fetch!(generators, :by))
+    gen_filter_by(changesets, fields, Map.fetch!(generators, :filter_by))
+    gen_get_all(changesets, Map.fetch!(generators, :get_all))
   end
 
-  @spec gen_by_functions(changeset, [Field.t()], (String.t(), map -> :ok), (atom, term, map -> :ok)) :: :ok
-  defp gen_by_functions(indexed_changesets, fields, internal_id_fn, by_fn) do
-    Enum.each(indexed_changesets, fn {id, changeset} ->
-      internal_id_fn.(id, changeset)
-
-      Enum.each(fields, fn
-        %Field{name: name, key: true} ->
-          value = Map.get(changeset, name)
-          if not is_nil(value), do: by_fn.(name, value, id)
-
-        %Field{name: name, unique: true} ->
-          value = Map.get(changeset, name)
-          if not is_nil(value), do: by_fn.(name, value, id)
-
-        _ ->
-          :ok
-      end)
-    end)
+  @spec gen_internal_id(list(map), function, function) :: :ok
+  defp gen_internal_id(changesets, internal_id, default_internal_id) do
+    Enum.each(changesets, &internal_id.(get_id(&1), &1))
+    default_internal_id.()
   end
 
-  @spec gen_filter_by_functions(changeset, [Field.t()], (atom, term, [] -> :ok)) :: :ok
-  defp gen_filter_by_functions(indexed_changesets, fields, filter_by_fn) do
+  @spec gen_by(list(map), list(Field.t()), function) :: :ok
+  defp gen_by(changesets, fields, by) do
     Enum.each(fields, fn
-      %Field{name: name, filter_by: true} ->
-        indexed_changesets
-        |> Enum.group_by(fn {_, changeset} -> Map.get(changeset, name) end)
-        |> Enum.each(fn {key, values} ->
-          filter_by_fn.(name, key, Enum.map(values, fn {id, _} -> id end))
-        end)
+      %Field{name: name, key: key, unique: unique} when key or unique ->
+        changesets
+        |> Enum.reduce(%{}, fn value, acc -> Map.put(acc, Map.get(value, name), Map.get(value, :__id__)) end)
+        |> by.(name)
 
       _ ->
         :ok
     end)
   end
 
-  @doc false
-  @spec __gen_defaults__([Field.t()], (atom -> :ok), (atom -> :ok)) :: :ok
-  def __gen_defaults__(fields, default_by_fn, default_filter_by_fn) do
+  @spec gen_filter_by(list(map), list(Field.t()), function) :: :ok
+  defp gen_filter_by(changesets, fields, filter_by) do
     Enum.each(fields, fn
-      %Field{name: name, key: true} -> default_by_fn.(name)
-      %Field{name: name, unique: true} -> default_by_fn.(name)
-      %Field{name: name, filter_by: true} -> default_filter_by_fn.(name)
-      _ -> :ok
+      %Field{name: name, filter_by: true} ->
+        changesets
+        |> Enum.group_by(fn changeset -> Map.get(changeset, name) end)
+        |> Enum.reduce(%{}, fn {key, values}, acc -> Map.put(acc, key, Enum.map(values, &Map.get(&1, :__id__))) end)
+        |> filter_by.(name)
+
+      _ ->
+        :ok
     end)
   end
 
-  @spec sort_changeset(changeset, list(Field.t())) :: changeset
-  defp sort_changeset(changeset, fields) do
-    Enum.reduce(fields, changeset, fn
-      %Field{sort: nil}, cs ->
-        cs
+  @spec gen_get_all(list(map), function) :: :ok
+  defp gen_get_all(changesets, get_all), do: changesets |> Enum.count() |> get_all.()
 
-      %Field{name: name, sort: sort}, cs ->
-        Enum.sort_by(cs, fn {_, map} -> Map.get(map, name) end, &sorter(&1, &2, sort))
+  #
+  ## Changeset
+  #
+  @spec get_changesets(%Stream{}, list(Field.t())) :: list
+  defp get_changesets(content, fields) do
+    content |> Enum.map(&to_changeset(&1, fields)) |> sort_changeset(fields) |> set_id()
+  end
+
+  @spec to_changeset(map, list(Field.t())) :: map
+  defp to_changeset(row, fields) do
+    Enum.reduce(fields, %{}, fn %Field{name: name, column: column, parser: parser, join: join}, acc ->
+      Map.put(acc, name, parser.(get_value(row, column, join)))
+    end)
+  end
+
+  @spec set_id(list(map)) :: list(map)
+  defp set_id(changesets), do: changesets |> Enum.with_index(1) |> Enum.map(&set_index(&1))
+
+  @spec set_index({row, non_neg_integer}) :: row
+  defp set_index({row, index}) when is_map(row), do: Map.put(row, :__id__, index)
+  defp set_index({row, index}) when is_list(row), do: [index | row]
+
+  @spec get_id(row) :: term
+  defp get_id(collection), do: get_value(collection, :__id__)
+
+  @spec get_value(row, String.t() | atom | number, String.t()) :: term
+  defp get_value(collection, columns, join \\ "")
+
+  defp get_value(collection, columns, join) when is_list(columns) do
+    columns |> Enum.map(&get_value(collection, &1, join)) |> Enum.join(join)
+  end
+
+  defp get_value(collection, elem, _) when is_map(collection), do: Map.get(collection, elem)
+  defp get_value(collection, :__id__, _) when is_list(collection), do: Enum.at(collection, 0)
+  defp get_value(collection, elem, _) when is_list(collection), do: Enum.at(collection, elem - 1)
+
+  @spec sort_changeset(list(map), list(Field.t())) :: list(map)
+  defp sort_changeset(changesets, fields) do
+    Enum.reduce(fields, changesets, fn
+      %Field{sort: nil}, cs -> cs
+      %Field{name: name, sort: sort}, cs -> Enum.sort_by(cs, &Map.get(&1, name), &sorter(&1, &2, sort))
     end)
   end
 
@@ -259,74 +280,34 @@ defmodule Csv.Schema do
   defp sorter(value1, value2, :asc), do: value1 <= value2
   defp sorter(value1, value2, :desc), do: value1 > value2
 
-  @spec to_changeset(map, [Field.t()], boolean) :: {any, map}
-  defp to_changeset(row, fields, headers) do
-    {
-      get_value(row, :__id__, headers),
-      Enum.reduce(fields, %{}, fn %Field{name: name, column: column, parser: parser, join: join}, acc ->
-        Map.put(acc, name, parser.(get_value(row, column, headers, join)))
-      end)
-    }
+  #
+  ## Validations
+  #
+  @spec __validate__(%Stream{}, list(Field.t()), boolean) :: :ok | no_return
+  def __validate__(content, fields, headers) do
+    validate_csv_not_empty(content)
+    validate_csv_has_fields(content, fields, headers)
+    validate_key(content, fields)
+    validate_unique(content, fields)
   end
 
-  @spec get_value(map | list, String.t() | atom | number, boolean, String.t()) :: term
-  defp get_value(collection, cols, header, join \\ "")
-
-  defp get_value(collection, cols, header, join) when is_list(cols) do
-    cols
-    |> Enum.map(fn column -> get_value(collection, column, header, join) end)
-    |> Enum.join(join)
+  @spec validate_csv_not_empty(%Stream{}) :: :ok | no_return
+  defp validate_csv_not_empty(content) do
+    if content |> Stream.take(1) |> Enum.count() > 0, do: :ok, else: raise("Provided csv is empty")
   end
 
-  defp get_value(collection, elem, true, _), do: Map.get(collection, elem)
-  defp get_value(collection, :__id__, _, _), do: Enum.at(collection, 0)
-  defp get_value(collection, elem, _, _), do: Enum.at(collection, elem)
-
-  ### Validations
-
-  @spec __checks__!([map | []], [Field.t()], boolean) :: :ok | no_return
-  def __checks__!(content, fields, headers) do
-    check_csv_has_fields!(content, fields, headers)
-    check_key!(content, fields, headers)
-    check_unique!(content, fields, headers)
-  end
-
-  @doc false
-  @spec check_key!([map | list], [Field.t()], boolean) :: :ok | no_return
-  defp check_key!(content, fields, headers) do
-    case Enum.filter(fields, & &1.key) do
-      [] -> :ok
-      [field] -> valid_key_field?(content, field, headers)
-      fields -> raise "Multiple keys defined (#{fields |> Enum.map(& &1.column) |> Enum.join(", ")})"
-    end
-  end
-
-  @spec valid_key_field?([map], [Field.t()], boolean) :: :ok | no_return
-  defp valid_key_field?(content, field, headers) do
-    values = Enum.map(content, &get_value(&1, field.column, headers, field.join))
-
-    unique = values |> Enum.uniq() |> Enum.reject(fn value -> is_nil(value) || value == "" end) |> Enum.count()
-
-    if Enum.count(values) != unique do
-      raise "Key field #{field.column} contains empty, nil or not unique values: #{inspect(duplicates(values))}"
-    else
-      :ok
-    end
-  end
-
-  @doc false
-  @spec check_csv_has_fields!([map | []], [Field.t()], boolean) :: :ok | no_return
-  defp check_csv_has_fields!(content, fields, true) do
+  @spec validate_csv_has_fields(%Stream{}, list(Field.t()), boolean) :: :ok | no_return
+  defp validate_csv_has_fields(content, fields, true) do
     content
-    |> Enum.take(1)
+    |> Stream.take(1)
     |> Enum.each(fn row ->
       if match_all_fields?(row, fields), do: :ok, else: raise("Not all fields are mapped to csv")
     end)
   end
 
-  defp check_csv_has_fields!(content, fields, _) do
+  defp validate_csv_has_fields(content, fields, _) do
     content
-    |> Enum.take(1)
+    |> Stream.take(1)
     |> Enum.each(fn row ->
       fields
       |> Enum.map(fn %Field{column: column} -> column end)
@@ -341,7 +322,7 @@ defmodule Csv.Schema do
     end)
   end
 
-  @spec match_all_fields?(map, [Field.t()]) :: boolean
+  @spec match_all_fields?(row, list(Field.t())) :: boolean
   defp match_all_fields?(row, fields) do
     Enum.all?(fields, fn
       %Field{column: column} when is_list(column) -> Enum.all?(column, &Map.has_key?(row, &1))
@@ -349,37 +330,52 @@ defmodule Csv.Schema do
     end)
   end
 
-  @spec check_unique!([tuple], [Field.t()], boolean) :: :ok | no_return
-  defp check_unique!(content, fields, headers) do
-    Enum.each(fields, fn
-      %Field{column: column, key: true, join: join} -> unique_or_raise!(content, column, headers, join)
-      %Field{column: column, unique: true, join: join} -> unique_or_raise!(content, column, headers, join)
-      _ -> :ok
-    end)
+  @spec validate_key(%Stream{}, list(Field.t())) :: :ok | no_return
+  defp validate_key(content, fields) do
+    case Enum.filter(fields, & &1.key) do
+      [] -> :ok
+      [field] -> valid_key_field?(content, field)
+      fields -> raise "Multiple keys defined (#{fields |> Enum.map(& &1.column) |> Enum.join(", ")})"
+    end
   end
 
-  @spec unique_or_raise!([tuple], term, boolean, String.t()) :: :ok | no_return
-  defp unique_or_raise!(content, column, headers, join) do
-    values =
-      content
-      |> Enum.map(&get_value(&1, column, headers, join))
-      |> Enum.reject(fn value -> is_nil(value) || value == "" end)
+  @spec valid_key_field?(%Stream{}, list(Field.t())) :: :ok | no_return
+  defp valid_key_field?(content, field) do
+    values = Enum.map(content, &get_value(&1, field.column, field.join))
+    unique = values |> Enum.uniq() |> Enum.reject(fn value -> is_nil(value) || value == "" end) |> Enum.count()
 
-    if Enum.count(values) != values |> Enum.uniq() |> Enum.count() do
-      raise "Field #{column}, set as unique, contains duplicates: #{inspect(duplicates(values))}"
+    if Enum.count(values) != unique do
+      raise "Key field #{field.column} contains empty, nil or not unique values: #{inspect(get_duplicates(values))}"
     else
       :ok
     end
   end
 
-  @spec duplicates([]) :: []
-  defp duplicates(list) do
+  @spec validate_unique(%Stream{}, list(Field.t())) :: :ok | no_return
+  defp validate_unique(content, fields) do
+    Enum.each(fields, fn
+      %Field{column: column, key: true, join: join} -> unique_or_raise(content, column, join)
+      %Field{column: column, unique: true, join: join} -> unique_or_raise(content, column, join)
+      _ -> :ok
+    end)
+  end
+
+  @spec unique_or_raise(%Stream{}, term, String.t()) :: :ok | no_return
+  defp unique_or_raise(content, column, join) do
+    values = content |> Stream.map(&get_value(&1, column, join)) |> Enum.reject(&(is_nil(&1) || &1 == ""))
+
+    if Enum.count(values) != values |> Enum.uniq() |> Enum.count() do
+      raise "Field #{column}, set as unique, contains duplicates: #{inspect(get_duplicates(values))}"
+    else
+      :ok
+    end
+  end
+
+  @spec get_duplicates(list) :: list
+  defp get_duplicates(list) do
     list
     |> Enum.reduce({%{}, %{}}, fn x, {elems, dupes} ->
-      case Map.has_key?(elems, x) do
-        true -> {elems, Map.put(dupes, x, nil)}
-        false -> {Map.put(elems, x, nil), dupes}
-      end
+      if Map.has_key?(elems, x), do: {elems, Map.put(dupes, x, nil)}, else: {Map.put(elems, x, nil), dupes}
     end)
     |> elem(1)
     |> Map.keys()
