@@ -27,6 +27,9 @@ defmodule ManTest do
     assert "Male" |> Man.Desc.filter_by_gender() |> Enum.count() == 26
 
     assert "Male" |> Man.Asc.filter_by_gender() |> Enum.map(& &1.man_id) ==
+             "Male" |> Man.Asc.filter_by_gender() |> Enum.sort_by(& &1.first_name) |> Enum.map(& &1.man_id)
+
+    assert "Male" |> Man.Asc.filter_by_gender() |> Enum.map(& &1.man_id) ==
              "Male" |> Man.Desc.filter_by_gender() |> Enum.map(& &1.man_id) |> Enum.reverse()
   end
 
@@ -38,5 +41,8 @@ defmodule ManTest do
   test "Get all returns all men" do
     assert Man.Asc.get_all() |> Enum.count() == 50
     assert Man.Desc.get_all() |> Enum.count() == 50
+
+    assert Man.Asc.get_all(:materialized) |> Enum.map(& &1.man_id) ==
+             :materialized |> Man.Desc.get_all() |> Enum.reverse() |> Enum.map(& &1.man_id)
   end
 end

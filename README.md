@@ -25,12 +25,13 @@ end
 
 Supposing you have a CSV file looking like this:
 
-id  | first_name | last_name  | email                         | gender | ip_address      | date_of_birth
-:--:|:----------:|:----------:|:-----------------------------:|:------:|:---------------:|:------------:
-1   | Ivory      | Overstreet | ioverstreet0@businessweek.com | Female | 30.138.91.62    | 10/22/2018
-2   | Ulick      | Vasnev     | uvasnev1@vkontakte.ru         | Male   | 35.15.164.70    | 01/19/2018
-3   | Chloe      | Freemantle | cfreemantle2@parallels.com    | Female | 133.133.113.255 | 08/13/2018
-... | ...        | ...        | ...                           | ...    | ...             | ...
+  id | first_name | last_name  | email                         | gender | ip_address      | date_of_birth |
+:----|:-----------|:-----------|:------------------------------|:-------|:----------------|:--------------|
+1    | Ivory      | Overstreet | ioverstreet0@businessweek.com | Female | 30.138.91.62    | 10/22/2018    |
+2    | Ulick      | Vasnev     | uvasnev1@vkontakte.ru         | Male   | 35.15.164.70    | 01/19/2018    |
+3    | Chloe      | Freemantle | cfreemantle2@parallels.com    | Female | 133.133.113.255 | 08/13/2018    |
+...  | ...        | ...        | ...                           | ...    | ...             | ...           |
+
 
 Is possible to create an Ecto.Schema-like repository using `Csv.Schema` macro:
 
@@ -57,7 +58,7 @@ have a column in csv file.
 For example the following field configuration will result in a compilation error:
 
 ```elixir
-field :id, "non_existing_id", ....
+field :id, "non_existing_id", ...
 ```
 
 Schema could be configured using a custom separator
@@ -65,9 +66,10 @@ Schema could be configured using a custom separator
 use Csv.Schema, separator: ?,
 ```
 
-Moreover it's possible to configure if csv file has or has not an header. Depending
-on header param value field config changes:
+Moreover it's possible to configure if csv file has or has not an header. Depending on header param value field config changes:
 ```elixir
+# Default header value is `true`
+use Csv.Schema
 # Csv with header
 schema "path/to/person.csv" do
   field :id, "id", key: true
@@ -75,6 +77,7 @@ schema "path/to/person.csv" do
 end
 
 # Csv without header. Note that field 1 is binded with the first csv column.
+use Csv.Schema, header: false
 # Index goes from 1 to N
 schema "path/to/person.csv" do
   field :id, 1, key: true
@@ -148,37 +151,61 @@ configure multiple fields candidate for method creation (flags `key`, `unique` a
 
 Because "without data you're just another person with an opinion" here some data:
 
-csv rows | key | unique | filter_by | compile time ms
---------:|:---:|:------:|:---------:|----------------:
-1_000    | no  | 0      | 0         |    419 ms
-1_000    | yes | 1      | 1         |  1_980 ms
-1_000    | yes | 2      | 2         |  2_542 ms
-1_000    | yes | 2      | 4         |  3_565 ms
-1_000    | yes | 2      | 0         |  1_758 ms
-1_000    | yes | 0      | 4         |  2_090 ms
-1_000    | no  | 2      | 0         |  1_634 ms
-1_000    | no  | 0      | 4         |  1_971 ms
-5_000    | no  | 0      | 0         |  2_410 ms
-5_000    | yes | 1      | 1         | 15_282 ms
-5_000    | yes | 2      | 2         | 22_478 ms
-5_000    | yes | 2      | 4         | 28_060 ms
-5_000    | yes | 2      | 0         | 16_254 ms
-5_000    | yes | 0      | 4         | 15_043 ms
-5_000    | no  | 2      | 0         | 14_518 ms
-5_000    | no  | 0      | 4         | 12_931 ms
-10_000   | no  | 0      | 0         |  4_962 ms
-10_000   | yes | 1      | 1         | 28_995 ms
-10_000   | yes | 2      | 2         | 42_817 ms
-10_000   | yes | 2      | 4         | 54_759 ms
-10_000   | yes | 2      | 0         | 37_166 ms
-10_000   | yes | 0      | 4         | 29_913 ms
-10_000   | no  | 2      | 0         | 33_578 ms
-10_000   | no  | 0      | 4         | 29_096 ms
+### Compilation time
 
-5 compilations average time.
+| csv rows |   key | unique | filter_by |  compile time |
+| -------: | ----: | -----: | --------: | ------------: |
+|    1_000 | false |      0 |         0 |    301_727 µs |
+|    1_000 | false |      2 |         0 |    352_522 µs |
+|    1_000 | false |      0 |         4 |    318_225 µs |
+|    1_000 |  true |      0 |         0 |    334_240 µs |
+|    1_000 |  true |      1 |         1 |    348_697 µs |
+|    1_000 |  true |      2 |         0 |    406_367 µs |
+|    1_000 |  true |      0 |         4 |    385_850 µs |
+|    1_000 |  true |      2 |         2 |    414_617 µs |
+|    1_000 |  true |      2 |         4 |    446_155 µs |
+|    5_000 | false |      0 |         0 |  2_734_565 µs |
+|    5_000 | false |      2 |         0 |  3_450_438 µs |
+|    5_000 | false |      0 |         4 |  3_464_593 µs |
+|    5_000 |  true |      0 |         0 |  3_084_923 µs |
+|    5_000 |  true |      1 |         1 |  3_795_718 µs |
+|    5_000 |  true |      2 |         0 |  3_752_112 µs |
+|    5_000 |  true |      0 |         4 |  3_387_067 µs |
+|    5_000 |  true |      2 |         2 |  3_839_068 µs |
+|    5_000 |  true |      2 |         4 |  4_113_228 µs |
+|   10_000 | false |      0 |         0 |  6_889_505 µs |
+|   10_000 | false |      2 |         0 |  8_667_683 µs |
+|   10_000 | false |      0 |         4 |  8_606_961 µs |
+|   10_000 |  true |      0 |         0 |  7_892_421 µs |
+|   10_000 |  true |      1 |         1 |  8_449_838 µs |
+|   10_000 |  true |      2 |         0 |  9_507_693 µs |
+|   10_000 |  true |      0 |         4 | 10_339_080 µs |
+|   10_000 |  true |      2 |         2 | 10_518_744 µs |
+|   10_000 |  true |      2 |         4 | 10_480_884 µs |
 
+### Execution time
+
+| csv rows |  key | unique | filter_by |     by avg |    by tot | filter_by avg | filter_by tot |
+| -------: | ---: | -----: | --------: | ---------: | --------: | ------------: | ------------: |
+|    1_000 | true |      1 |         1 | 0.74 µs/op | 74_412 µs |    0.89 µs/op |     89_275 µs |
+|    5_000 | true |      1 |         1 | 0.79 µs/op | 79_776 µs |    1.18 µs/op |    118_786 µs |
+|   10_000 | true |      1 |         1 | 0.78 µs/op | 78_908 µs |    1.83 µs/op |    183_642 µs |
+
+### Execution details
 Executed on my machine:
 
     Lenovo Thinkpad T480
     CPU: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
     RAM: 32GB
+
+### Try yourself
+
+If you like to run compilation benchmarks yourself:
+
+```sh
+iex -S mix
+```
+```elixir
+c "benchmark/timings.exs"
+```
+
