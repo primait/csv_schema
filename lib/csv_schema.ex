@@ -103,27 +103,33 @@ defmodule Csv.Schema do
           #
           generators = %{
             internal_id: fn id, changeset ->
-              changeset = Map.delete(changeset, :__id__)
               def __id__(unquote(id)), do: struct!(__MODULE__, unquote(Macro.escape(changeset)))
             end,
             default_internal_id: fn ->
               def __id__(_), do: nil
             end,
-            by: fn translation, name ->
+            by: fn translation_map, name ->
               def unquote(:"by_#{name}")(value) do
-                apply(__MODULE__, :__id__, [Map.get(unquote(Macro.escape(translation)), value)])
+                unquote(Macro.escape(translation_map)) |> Map.get(value) |> __MODULE__.__id__()
               end
             end,
-            filter_by: fn translation, name ->
+            filter_by: fn translation_map, name ->
               def unquote(:"filter_by_#{name}")(value) do
-                unquote(Macro.escape(translation)) |> Map.get(value, []) |> Enum.map(&apply(__MODULE__, :__id__, [&1]))
+                unquote(Macro.escape(translation_map)) |> Map.get(value, []) |> Enum.map(&__MODULE__.__id__/1)
               end
             end,
             get_all: fn num_of_rows ->
-              def get_all(), do: 1..unquote(num_of_rows) |> Stream.map(&apply(__MODULE__, :__id__, [&1]))
-              def get_all(:materialized), do: 1..unquote(num_of_rows) |> Enum.map(&apply(__MODULE__, :__id__, [&1]))
+              def get_all(), do: 1..unquote(num_of_rows) |> Stream.map(&__MODULE__.__id__/1)
+              def get_all(:materialized), do: 1..unquote(num_of_rows) |> Enum.map(&__MODULE__.__id__/1)
             end
           }
+
+          #
+          ## Specs for some of generated functions
+          #
+          @spec __id__(non_neg_integer) :: t
+          @spec get_all :: %Stream{}
+          @spec get_all(:materialized) :: list(t)
 
           #
           ## Generation
@@ -194,7 +200,7 @@ defmodule Csv.Schema do
 
   @spec gen_internal_id(list(map), function, function) :: :ok
   defp gen_internal_id(changesets, internal_id, default_internal_id) do
-    Enum.each(changesets, &internal_id.(get_id(&1), &1))
+    Enum.each(changesets, &internal_id.(get_id(&1), Map.delete(&1, :__id__)))
     default_internal_id.()
   end
 

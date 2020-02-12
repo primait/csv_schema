@@ -11,4 +11,6 @@ defmodule R5_000.KN.U2.F0 do
     field :ip_address, "ip_address", unique: true
     field :date_of_birth, "date_of_birth"
   end
+
+  def description, do: ["5_000", false, 2, 0]
 end

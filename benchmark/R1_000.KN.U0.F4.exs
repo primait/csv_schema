@@ -1,8 +1,8 @@
-defmodule R10_000.KN.U0.F4 do
+defmodule R1_000.KN.U0.F4 do
   @moduledoc false
   use Csv.Schema
 
-  schema "data/dataset_10_000.csv" do
+  schema "data/dataset_1_000.csv" do
     field :id, "id"
     field :first_name, "first_name", filter_by: true
     field :last_name, "last_name", filter_by: true
@@ -11,4 +11,6 @@ defmodule R10_000.KN.U0.F4 do
     field :ip_address, "ip_address"
     field :date_of_birth, "date_of_birth", filter_by: true
   end
+
+  def description, do: ["1_000", false, 0, 4]
 end
