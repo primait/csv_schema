@@ -109,27 +109,28 @@ defmodule Csv.Schema do
               def __id__(_), do: nil
             end,
             by: fn translation_map, name ->
+              quote do: unquote(Schema.__spec__(name, :by))
+
               def unquote(:"by_#{name}")(value) do
                 unquote(Macro.escape(translation_map)) |> Map.get(value) |> __MODULE__.__id__()
               end
             end,
             filter_by: fn translation_map, name ->
+              quote do: unquote(Schema.__spec__(name, :filter_by))
+
               def unquote(:"filter_by_#{name}")(value) do
                 unquote(Macro.escape(translation_map)) |> Map.get(value, []) |> Enum.map(&__MODULE__.__id__/1)
               end
             end,
             get_all: fn num_of_rows ->
+              @spec get_all :: %Stream{}
               def get_all(), do: 1..unquote(num_of_rows) |> Stream.map(&__MODULE__.__id__/1)
+              @spec get_all(:materialized) :: list(t)
               def get_all(:materialized), do: 1..unquote(num_of_rows) |> Enum.map(&__MODULE__.__id__/1)
             end
           }
 
-          #
-          ## Specs for some of generated functions
-          #
           @spec __id__(non_neg_integer) :: t | nil
-          @spec get_all :: %Stream{}
-          @spec get_all(:materialized) :: list(t)
 
           #
           ## Generation
@@ -233,6 +234,27 @@ defmodule Csv.Schema do
 
   @spec gen_get_all(list(map), function) :: :ok
   defp gen_get_all(changesets, get_all), do: changesets |> Enum.count() |> get_all.()
+
+  @spec __spec__(String.t() | atom, :by | :filter_by) :: tuple
+  def __spec__(name, :by), do: by_spec_ast(name)
+  def __spec__(name, :filter_by), do: filter_by_spec_ast(name)
+
+  ## Generate: @spec by_#{name}(any) :: t | nil
+  @spec by_spec_ast(String.t()) :: tuple
+  defp by_spec_ast(name) do
+    ast_boilerplate(
+      {:"::", [], [{String.to_atom("by_#{name}"), [], [{:any, [], Elixir}]}, {:|, [], [{:t, [], Elixir}, nil]}]}
+    )
+  end
+
+  ## Generate: @spec filter_by_#{name}(any) :: [t]
+  @spec filter_by_spec_ast(String.t()) :: tuple
+  defp filter_by_spec_ast(name) do
+    ast_boilerplate({:"::", [], [{String.to_atom("filter_by_#{name}"), [], [{:any, [], Elixir}]}, [{:t, [], Elixir}]]})
+  end
+
+  @spec ast_boilerplate(tuple) :: tuple
+  defp ast_boilerplate(inner), do: {:@, [context: Elixir, import: Kernel], [{:spec, [context: Elixir], [inner]}]}
 
   #
   ## Changeset
