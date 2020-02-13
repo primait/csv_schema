@@ -101,6 +101,7 @@ defmodule Csv.Schema do
           #
           ## Destination module function generators
           #
+          @spec __id__(non_neg_integer) :: t | nil
           generators = %{
             internal_id: fn id, changeset ->
               def __id__(unquote(id)), do: struct!(__MODULE__, unquote(Macro.escape(changeset)))
@@ -109,15 +110,13 @@ defmodule Csv.Schema do
               def __id__(_), do: nil
             end,
             by: fn translation_map, name ->
-              quote do: unquote(Schema.__spec__(name, :by))
-
+              @spec unquote(:"by_#{name}")(any) :: t | nil
               def unquote(:"by_#{name}")(value) do
                 unquote(Macro.escape(translation_map)) |> Map.get(value) |> __MODULE__.__id__()
               end
             end,
             filter_by: fn translation_map, name ->
-              quote do: unquote(Schema.__spec__(name, :filter_by))
-
+              @spec unquote(:"filter_by_#{name}")(any) :: [t]
               def unquote(:"filter_by_#{name}")(value) do
                 unquote(Macro.escape(translation_map)) |> Map.get(value, []) |> Enum.map(&__MODULE__.__id__/1)
               end
@@ -129,8 +128,6 @@ defmodule Csv.Schema do
               def get_all(:materialized), do: 1..unquote(num_of_rows) |> Enum.map(&__MODULE__.__id__/1)
             end
           }
-
-          @spec __id__(non_neg_integer) :: t | nil
 
           #
           ## Generation
