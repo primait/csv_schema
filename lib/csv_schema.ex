@@ -232,27 +232,6 @@ defmodule Csv.Schema do
   @spec gen_get_all(list(map), function) :: :ok
   defp gen_get_all(changesets, get_all), do: changesets |> Enum.count() |> get_all.()
 
-  @spec __spec__(String.t() | atom, :by | :filter_by) :: tuple
-  def __spec__(name, :by), do: by_spec_ast(name)
-  def __spec__(name, :filter_by), do: filter_by_spec_ast(name)
-
-  ## Generate: @spec by_#{name}(any) :: t | nil
-  @spec by_spec_ast(String.t()) :: tuple
-  defp by_spec_ast(name) do
-    ast_boilerplate(
-      {:"::", [], [{String.to_atom("by_#{name}"), [], [{:any, [], Elixir}]}, {:|, [], [{:t, [], Elixir}, nil]}]}
-    )
-  end
-
-  ## Generate: @spec filter_by_#{name}(any) :: [t]
-  @spec filter_by_spec_ast(String.t()) :: tuple
-  defp filter_by_spec_ast(name) do
-    ast_boilerplate({:"::", [], [{String.to_atom("filter_by_#{name}"), [], [{:any, [], Elixir}]}, [{:t, [], Elixir}]]})
-  end
-
-  @spec ast_boilerplate(tuple) :: tuple
-  defp ast_boilerplate(inner), do: {:@, [context: Elixir, import: Kernel], [{:spec, [context: Elixir], [inner]}]}
-
   #
   ## Changeset
   #
