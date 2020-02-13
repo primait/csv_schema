@@ -127,7 +127,7 @@ defmodule Csv.Schema do
           #
           ## Specs for some of generated functions
           #
-          @spec __id__(non_neg_integer) :: t
+          @spec __id__(non_neg_integer) :: t | nil
           @spec get_all :: %Stream{}
           @spec get_all(:materialized) :: list(t)
 
