@@ -18,15 +18,19 @@ defmodule BuddyTest do
     assert is_nil(Buddy.by_email("ajeje.brazorf@prima.it"))
   end
 
+  test "Get by unique field. When called with nil, having a nil field in csv, returns nil" do
+    assert is_nil(Buddy.by_email(nil))
+  end
+
   test "Filter by field. When value matches returns array of buddies" do
     assert "Male" |> Buddy.filter_by_gender() |> Enum.count() == 494
   end
 
   test "Filter by field. When value doesn't match return empty array" do
-    assert "Ajeje" |> Buddy.filter_by_first_name() == []
+    assert Buddy.filter_by_first_name("Ajeje") == []
   end
 
   test "Get all returns all buddies" do
-    assert Buddy.get_all() |> Enum.count() == 1000
+    assert Enum.count(Buddy.get_all()) == 1000
   end
 end
