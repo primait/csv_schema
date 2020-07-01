@@ -1,5 +1,5 @@
 id,first_name,last_name,email,gender,ip_address,date_of_birth,
-1,Rickard,Chugg,rchugg0@time.com,Male,83.152.55.230,08/10/2018,
+1,Rickard,Chugg,,Male,83.152.55.230,08/10/2018,
 2,Frederica,Tassel,ftassel1@ycombinator.com,Female,162.237.108.24,09/29/2018,
 3,Conrade,Hammell,chammell2@tuttocitta.it,Male,33.109.110.43,04/27/2018,
 4,Rakel,O'Dennehy,rodennehy3@cloudflare.com,Female,206.14.201.190,10/22/2018,

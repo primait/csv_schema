@@ -25,8 +25,8 @@ defmodule Csv.Schema do
 
     At the end of compilation now your module is a Struct and has 3 kind of getters:
 
-    - `by_{key_field_name}` returns single records object or nil
-    - `filter_by_{field_name}` returns list of records matching provided property
+    - `by_{key_field_name}` returns single records object or nil.
+    - `filter_by_{field_name}` returns list of records matching provided property.
     - `get_all` returns all records
 
 
@@ -123,9 +123,9 @@ defmodule Csv.Schema do
             end,
             get_all: fn num_of_rows ->
               @spec get_all :: %Stream{}
-              def get_all(), do: 1..unquote(num_of_rows) |> Stream.map(&__MODULE__.__id__/1)
+              def get_all, do: Stream.map(1..unquote(num_of_rows), &__MODULE__.__id__/1)
               @spec get_all(:materialized) :: list(t)
-              def get_all(:materialized), do: 1..unquote(num_of_rows) |> Enum.map(&__MODULE__.__id__/1)
+              def get_all(:materialized), do: Enum.map(1..unquote(num_of_rows), &__MODULE__.__id__/1)
             end
           }
 
@@ -207,7 +207,12 @@ defmodule Csv.Schema do
     Enum.each(fields, fn
       %Field{name: name, key: key, unique: unique} when key or unique ->
         changesets
-        |> Enum.reduce(%{}, fn value, acc -> Map.put(acc, Map.get(value, name), Map.get(value, :__id__)) end)
+        |> Enum.reduce(%{}, fn changeset, acc ->
+          case Map.get(changeset, name) do
+            nil -> acc
+            val -> Map.put(acc, val, Map.get(changeset, :__id__))
+          end
+        end)
         |> by.(name)
 
       _ ->

@@ -10,7 +10,7 @@ defmodule Bro do
     field :bro_id, "id", key: true, parser: &integer!/1
     field :first_name, "first_name", filter_by: true
     field :last_name, "last_name"
-    field :email, "email", unique: true
+    field :email, "email", unique: true, filter_by: true
     field :gender, "gender", filter_by: true
     field :ip_address, "ip_address"
     field :date_of_birth, "date_of_birth", parser: &date!(&1, "{0M}/{0D}/{0YYYY}")
