@@ -11,7 +11,7 @@ defmodule Csv.Schema do
         use Csv.Schema, headers: true, separator: ?,
         alias Csv.Schema.Parser
 
-        schema "path/to/person.csv" do
+        schema path: "path/to/person.csv" do
           field :id, "id", key: true
           field :first_name, "first_name", filter_by: true
           field :last_name, "last_name", sort: :asc
@@ -22,6 +22,19 @@ defmodule Csv.Schema do
           field :date_of_birth, "date_of_birth", parser: &Parser.date!(&1, "{0M}/{0D}/{0YYYY}")
         end
       end
+
+    Is possible to define the schema with `string: ` param in order to directly use a string to geerate content
+
+      ...
+      @content \"\"\"
+      id,first_name,last_name,email,gender,ip_address,date_of_birth
+      1,Ivory,Overstreet,ioverstreet0@businessweek.com,Female,30.138.91.62,10/22/2018
+      2,Ulick,Vasnev,uvasnev1@vkontakte.ru,Male,35.15.164.70,01/19/2018
+      3,Chloe,Freemantle,cfreemantle2@parallels.com,Female,133.133.113.255,08/13/2018
+      \"\"\"
+
+      schema string: @content do
+      ...
 
     At the end of compilation now your module is a Struct and has 3 kind of getters:
 
@@ -66,83 +79,110 @@ defmodule Csv.Schema do
   the relative path to csv file in your project. Second parameter should be a `field` list
   included in `do`-`end` block
   """
-  defmacro schema(file_path, do: block) do
+  defmacro schema([string: string], do: block) do
     quote do
-      unquote do
-        quote do
-          Module.put_attribute(__MODULE__, :external_resource, unquote(file_path))
-          Module.put_attribute(__MODULE__, :in_, true)
+      to_stream = fn -> unquote(string) |> String.split("\n") |> Enum.reject(&(&1 == "")) |> Stream.map(& &1) end
+      Module.put_attribute(__MODULE__, :to_stream, to_stream)
+      unquote(__register__(block))
+      unquote(__explode__())
+    end
+  end
 
-          Module.register_attribute(__MODULE__, :fields, accumulate: true)
-          Module.register_attribute(__MODULE__, :struct_fields, accumulate: true)
-          Module.register_attribute(__MODULE__, :keys, accumulate: true)
+  defmacro schema([path: file_path], do: block) do
+    quote do
+      Module.put_attribute(__MODULE__, :external_resource, unquote(file_path))
+      Module.put_attribute(__MODULE__, :to_stream, fn -> File.stream!(unquote(file_path)) end)
+      unquote(__register__(block))
+      unquote(__explode__())
+    end
+  end
 
-          unquote(block)
+  # DEPRECATED. Consider using schema(list(content: String.t() | path: String.t(), do: block) instead
+  defmacro schema(file_path, do: block) when is_binary(file_path) do
+    quote do
+      Module.put_attribute(__MODULE__, :external_resource, unquote(file_path))
+      Module.put_attribute(__MODULE__, :to_stream, fn -> File.stream!(unquote(file_path)) end)
+      unquote(__register__(block))
+      unquote(__explode__())
+    end
+  end
 
-          Module.delete_attribute(__MODULE__, :in_)
+  @spec __register__(non_neg_integer) :: {:__block__, [], list}
+  def __register__(block) do
+    quote do
+      Module.put_attribute(__MODULE__, :in_, true)
+
+      Module.register_attribute(__MODULE__, :fields, accumulate: true)
+      Module.register_attribute(__MODULE__, :struct_fields, accumulate: true)
+      Module.register_attribute(__MODULE__, :keys, accumulate: true)
+
+      unquote(block)
+
+      Module.delete_attribute(__MODULE__, :in_)
+    end
+  end
+
+  @spec __explode__() :: {:__block__, [], list}
+  def __explode__ do
+    quote bind_quoted: [] do
+      defstruct Module.get_attribute(__MODULE__, :struct_fields)
+
+      fields = Module.get_attribute(__MODULE__, :fields)
+      headers? = Module.get_attribute(__MODULE__, :headers)
+      separator = Module.get_attribute(__MODULE__, :separator)
+      to_stream = Module.get_attribute(__MODULE__, :to_stream)
+      content = Parser.csv!(to_stream.(), headers?, separator)
+      num_of_rows = Enum.count(content)
+
+      #
+      ## Validation
+      #
+      Schema.__validate__(content, fields, headers?)
+
+      #
+      ## Destination module function generators
+      #
+      @spec __id__(non_neg_integer) :: t | nil
+      generators = %{
+        internal_id: fn id, changeset ->
+          def __id__(unquote(id)), do: struct!(__MODULE__, unquote(Macro.escape(changeset)))
+        end,
+        default_internal_id: fn ->
+          def __id__(_), do: nil
+        end,
+        by: fn translation_map, name ->
+          @spec unquote(:"by_#{name}")(any) :: t | nil
+          def unquote(:"by_#{name}")(value) do
+            unquote(Macro.escape(translation_map)) |> Map.get(value) |> __MODULE__.__id__()
+          end
+        end,
+        filter_by: fn translation_map, name ->
+          @spec unquote(:"filter_by_#{name}")(any) :: [t]
+          def unquote(:"filter_by_#{name}")(value) do
+            unquote(Macro.escape(translation_map)) |> Map.get(value, []) |> Enum.map(&__MODULE__.__id__/1)
+          end
+        end,
+        get_all: fn num_of_rows ->
+          @spec get_all :: %Stream{}
+          def get_all, do: Stream.map(1..unquote(num_of_rows), &__MODULE__.__id__/1)
+          @spec get_all(:materialized) :: list(t)
+          def get_all(:materialized), do: Enum.map(1..unquote(num_of_rows), &__MODULE__.__id__/1)
         end
-      end
+      }
 
-      unquote do
-        quote bind_quoted: [file_path: file_path] do
-          defstruct Module.get_attribute(__MODULE__, :struct_fields)
+      #
+      ## Generation
+      #
+      Schema.__gen__(content, fields, generators)
 
-          fields = Module.get_attribute(__MODULE__, :fields)
-          headers? = Module.get_attribute(__MODULE__, :headers)
-          separator = Module.get_attribute(__MODULE__, :separator)
-          content = Parser.csv!(file_path, headers?, separator)
-          num_of_rows = Enum.count(content)
-
-          #
-          ## Validation
-          #
-          Schema.__validate__(content, fields, headers?)
-
-          #
-          ## Destination module function generators
-          #
-          @spec __id__(non_neg_integer) :: t | nil
-          generators = %{
-            internal_id: fn id, changeset ->
-              def __id__(unquote(id)), do: struct!(__MODULE__, unquote(Macro.escape(changeset)))
-            end,
-            default_internal_id: fn ->
-              def __id__(_), do: nil
-            end,
-            by: fn translation_map, name ->
-              @spec unquote(:"by_#{name}")(any) :: t | nil
-              def unquote(:"by_#{name}")(value) do
-                unquote(Macro.escape(translation_map)) |> Map.get(value) |> __MODULE__.__id__()
-              end
-            end,
-            filter_by: fn translation_map, name ->
-              @spec unquote(:"filter_by_#{name}")(any) :: [t]
-              def unquote(:"filter_by_#{name}")(value) do
-                unquote(Macro.escape(translation_map)) |> Map.get(value, []) |> Enum.map(&__MODULE__.__id__/1)
-              end
-            end,
-            get_all: fn num_of_rows ->
-              @spec get_all :: %Stream{}
-              def get_all, do: Stream.map(1..unquote(num_of_rows), &__MODULE__.__id__/1)
-              @spec get_all(:materialized) :: list(t)
-              def get_all(:materialized), do: Enum.map(1..unquote(num_of_rows), &__MODULE__.__id__/1)
-            end
-          }
-
-          #
-          ## Generation
-          #
-          Schema.__gen__(content, fields, generators)
-
-          #
-          ## Cleanup
-          #
-          Module.delete_attribute(__MODULE__, :separator)
-          Module.delete_attribute(__MODULE__, :struct_fields)
-          Module.delete_attribute(__MODULE__, :fields)
-          Module.delete_attribute(__MODULE__, :headers)
-        end
-      end
+      #
+      ## Cleanup
+      #
+      Module.delete_attribute(__MODULE__, :separator)
+      Module.delete_attribute(__MODULE__, :struct_fields)
+      Module.delete_attribute(__MODULE__, :fields)
+      Module.delete_attribute(__MODULE__, :headers)
+      Module.delete_attribute(__MODULE__, :to_stream)
     end
   end
 
