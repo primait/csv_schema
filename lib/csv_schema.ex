@@ -108,6 +108,7 @@ defmodule Csv.Schema do
     end
   end
 
+  @doc false
   @spec __register__(non_neg_integer) :: {:__block__, [], list}
   def __register__(block) do
     quote do
@@ -123,6 +124,7 @@ defmodule Csv.Schema do
     end
   end
 
+  @doc false
   @spec __explode__() :: {:__block__, [], list}
   def __explode__ do
     quote unquote: false do
