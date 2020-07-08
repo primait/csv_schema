@@ -33,7 +33,7 @@ Supposing you have a CSV file looking like this:
 ...  | ...        | ...        | ...                           | ...    | ...             | ...           |
 
 
-Is possible to create an Ecto.Schema-like repository using `Csv.Schema` macro:
+It is possible to create an Ecto.Schema-like repository using `Csv.Schema` macro:
 
 ```elixir
 defmodule Person do
@@ -53,18 +53,18 @@ defmodule Person do
 end
 ```
 
-Is possible to define the schema with `string: ` param in order to directly use a string to geerate content
+It is possible to define the schema with `string: ` param in order to directly use a string to generate content
 ```elixir
-...
-@content """
+@data """
 id,first_name,last_name,email,gender,ip_address,date_of_birth
 1,Ivory,Overstreet,ioverstreet0@businessweek.com,Female,30.138.91.62,10/22/2018
 2,Ulick,Vasnev,uvasnev1@vkontakte.ru,Male,35.15.164.70,01/19/2018
 3,Chloe,Freemantle,cfreemantle2@parallels.com,Female,133.133.113.255,08/13/2018
 """
 
-schema string: @content do
+schema data: @data do
 ...
+end
 ```
 
 Note that it's not a requirement to map all fields, but every field mapped must

@@ -23,7 +23,7 @@ defmodule Csv.Schema do
         end
       end
 
-    Is possible to define the schema with `string: ` param in order to directly use a string to geerate content
+    It is possible to define the schema with `data: ` param in order to directly use a string to geerate content
 
       ...
       @content \"\"\"
@@ -33,8 +33,9 @@ defmodule Csv.Schema do
       3,Chloe,Freemantle,cfreemantle2@parallels.com,Female,133.133.113.255,08/13/2018
       \"\"\"
 
-      schema string: @content do
+      schema data: @content do
       ...
+      end
 
     At the end of compilation now your module is a Struct and has 3 kind of getters:
 
@@ -79,7 +80,7 @@ defmodule Csv.Schema do
   the relative path to csv file in your project. Second parameter should be a `field` list
   included in `do`-`end` block
   """
-  defmacro schema([string: string], do: block) do
+  defmacro schema([data: string], do: block) do
     quote do
       to_stream = fn -> unquote(string) |> String.split("\n") |> Enum.reject(&(&1 == "")) |> Stream.map(& &1) end
       Module.put_attribute(__MODULE__, :to_stream, to_stream)
@@ -97,7 +98,7 @@ defmodule Csv.Schema do
     end
   end
 
-  # DEPRECATED. Consider using schema(list(content: String.t() | path: String.t(), do: block) instead
+  # DEPRECATED. Consider using schema(list(content: String.t() | path: String.t()), do: block) instead
   defmacro schema(file_path, do: block) when is_binary(file_path) do
     quote do
       Module.put_attribute(__MODULE__, :external_resource, unquote(file_path))
@@ -124,7 +125,7 @@ defmodule Csv.Schema do
 
   @spec __explode__() :: {:__block__, [], list}
   def __explode__ do
-    quote bind_quoted: [] do
+    quote unquote: false do
       defstruct Module.get_attribute(__MODULE__, :struct_fields)
 
       fields = Module.get_attribute(__MODULE__, :fields)

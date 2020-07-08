@@ -8,7 +8,7 @@ defmodule Buddy do
 
   @content File.read!("data/dataset_1_000.csv")
 
-  schema string: @content do
+  schema data: @content do
     field :buddy_id, ["first_name", "last_name"], key: true, join: " "
     field :first_name, "first_name", filter_by: true
     field :last_name, "last_name"
