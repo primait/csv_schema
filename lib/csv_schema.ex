@@ -335,6 +335,7 @@ defmodule Csv.Schema do
   #
   ## Validations
   #
+  @doc false
   @spec __validate__(%Stream{}, list(Field.t()), boolean) :: :ok | no_return
   def __validate__(content, fields, headers) do
     validate_csv_not_empty(content)
