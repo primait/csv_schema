@@ -98,16 +98,6 @@ defmodule Csv.Schema do
     end
   end
 
-  # DEPRECATED. Consider using schema(list(content: String.t() | path: String.t()), do: block) instead
-  defmacro schema(file_path, do: block) when is_binary(file_path) do
-    quote do
-      Module.put_attribute(__MODULE__, :external_resource, unquote(file_path))
-      Module.put_attribute(__MODULE__, :to_stream, fn -> File.stream!(unquote(file_path)) end)
-      unquote(__register__(block))
-      unquote(__explode__())
-    end
-  end
-
   @doc false
   @spec __register__(non_neg_integer) :: {:__block__, [], list}
   def __register__(block) do
