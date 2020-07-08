@@ -6,7 +6,9 @@ defmodule Buddy do
 
   import Csv.Schema.Parser
 
-  schema "data/dataset_1_000.csv" do
+  @content File.read!("data/dataset_1_000.csv")
+
+  schema data: @content do
     field :buddy_id, ["first_name", "last_name"], key: true, join: " "
     field :first_name, "first_name", filter_by: true
     field :last_name, "last_name"

@@ -9,7 +9,7 @@ defmodule Man do
 
     import Csv.Schema.Parser
 
-    schema "data/dataset_50_no_header_semicolon.csv" do
+    schema path: "data/dataset_50_no_header_semicolon.csv" do
       field :man_id, 1, key: true, parser: &integer!/1
       field :first_name, 2, filter_by: true, sort: :asc
       field :last_name, 3
@@ -28,7 +28,7 @@ defmodule Man do
 
     import Csv.Schema.Parser
 
-    schema "data/dataset_50_no_header_semicolon.csv" do
+    schema path: "data/dataset_50_no_header_semicolon.csv" do
       field :man_id, 1, key: true, parser: &integer!/1
       field :first_name, 2, filter_by: true, sort: :desc
       field :last_name, 3

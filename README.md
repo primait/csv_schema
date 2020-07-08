@@ -33,14 +33,14 @@ Supposing you have a CSV file looking like this:
 ...  | ...        | ...        | ...                           | ...    | ...             | ...           |
 
 
-Is possible to create an Ecto.Schema-like repository using `Csv.Schema` macro:
+It is possible to create an Ecto.Schema-like repository using `Csv.Schema` macro:
 
 ```elixir
 defmodule Person do
   use Csv.Schema
   alias Csv.Schema.Parser
 
-  schema "path/to/person.csv" do
+  schema path: "path/to/person.csv" do
     field :id, "id"
     field :first_name, "first_name", filter_by: true
     field :last_name, "last_name", sort: :asc
@@ -53,6 +53,20 @@ defmodule Person do
 end
 ```
 
+It is possible to define the schema with `string: ` param in order to directly use a string to generate content
+```elixir
+@data """
+id,first_name,last_name,email,gender,ip_address,date_of_birth
+1,Ivory,Overstreet,ioverstreet0@businessweek.com,Female,30.138.91.62,10/22/2018
+2,Ulick,Vasnev,uvasnev1@vkontakte.ru,Male,35.15.164.70,01/19/2018
+3,Chloe,Freemantle,cfreemantle2@parallels.com,Female,133.133.113.255,08/13/2018
+"""
+
+schema data: @data do
+...
+end
+```
+
 Note that it's not a requirement to map all fields, but every field mapped must
 have a column in csv file.
 For example the following field configuration will result in a compilation error:
@@ -61,7 +75,7 @@ For example the following field configuration will result in a compilation error
 field :id, "non_existing_id", ...
 ```
 
-Schema could be configured using a custom separator
+Schema could be configured using a custom separator (default is ?,)
 ```elixir
 use Csv.Schema, separator: ?,
 ```
