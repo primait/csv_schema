@@ -85,7 +85,7 @@ Moreover it's possible to configure if csv file has or has not an header. Depend
 # Default header value is `true`
 use Csv.Schema
 # Csv with header
-schema "path/to/person.csv" do
+schema path: "path/to/person.csv" do
   field :id, "id", key: true
   ...
 end
@@ -93,7 +93,7 @@ end
 # Csv without header. Note that field 1 is binded with the first csv column.
 use Csv.Schema, header: false
 # Index goes from 1 to N
-schema "path/to/person.csv" do
+schema path: "path/to/person.csv" do
   field :id, 1, key: true
   ...
 end

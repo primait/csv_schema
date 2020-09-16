@@ -2,7 +2,7 @@ defmodule R5_000.KS.U0.F0 do
   @moduledoc false
   use Csv.Schema
 
-  schema "data/dataset_5_000.csv" do
+  schema path: "data/dataset_5_000.csv" do
     field :id, "id", key: true
     field :first_name, "first_name"
     field :last_name, "last_name"
