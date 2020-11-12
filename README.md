@@ -16,7 +16,7 @@ by adding `csv_schema` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:csv_schema, "~> 0.2.0"}
+    {:csv_schema, "~> 1.0.0"}
   ]
 end
 ```
