@@ -1,8 +1,13 @@
 # Csv Schema
 
-[![Hex pm](https://img.shields.io/hexpm/v/csv_schema.svg?style=flat)](https://hex.pm/packages/csv_schema)
 [![Build Status](https://travis-ci.org/primait/csv_schema.svg?branch=master)](https://travis-ci.org/primait/csv_schema)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Module Version](https://img.shields.io/hexpm/v/csv_schema.svg)](https://hex.pm/packages/csv_schema)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/csv_schema/)
+[![Total Download](https://img.shields.io/hexpm/dt/csv_schema.svg)](https://hex.pm/packages/csv_schema)
+[![License](https://img.shields.io/hexpm/l/csv_schema.svg)](https://github.com/primait/csv_schema/blob/master/LICENSE)
+[![Last Updated](https://img.shields.io/github/last-commit/primait/csv_schema.svg)](https://github.com/primait/csv_schema/commits/master)
+
+
 
 Csv schema is a library helping you to build Ecto.Schema-like modules having a csv file as source.
 
@@ -10,13 +15,12 @@ The idea behind this library is give the possibility to create, at compile-time,
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `csv_schema` to your list of dependencies in `mix.exs`:
+The package can be installed by adding `:csv_schema` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:csv_schema, "~> 1.0.0"}
+    {:csv_schema, "~> 0.2.8"}
   ]
 end
 ```
@@ -223,3 +227,9 @@ iex -S mix
 c "benchmark/timings.exs"
 ```
 
+## Copyright and License
+
+Copyright (c) 2019 PrimaIt
+
+This work is free. You can redistribute it and/or modify it under the
+terms of the MIT License. See the [LICENSE.md](./LICENSE.md) file for more details.
