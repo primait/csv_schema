@@ -11,3 +11,8 @@ services:
       - default
     env_file:
       - biscuit.env
+    depends_on:
+      - redis
+
+  redis:
+    image: public.ecr.aws/bitnami/redis:5.0
