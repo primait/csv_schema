@@ -1,11 +1,12 @@
 defmodule Csv.Schema.Parser do
   @moduledoc """
-  Utility module containing some functions for parsing and to read csv file
+  Utility module containing some functions for parsing and to read CSV file.
   """
 
   @doc """
-  Given a csv file path try to parse as csv with headers. Use list of maps as
-  data representation
+  Given a CSV file path try to parse as CSV with headers.
+
+  Use list of maps as data representation.
   """
   @spec csv!(%Stream{}, boolean, pos_integer) :: %Stream{} | no_return
   def csv!(stream, headers, separator = ?;), do: csv(stream, headers, separator)
@@ -24,11 +25,13 @@ defmodule Csv.Schema.Parser do
   end
 
   @doc """
-  Having a string or an atom as input cast value to atom. If something else is given
-  an exception is raised
-  If given argument is empty string or nil return value will be nil
+  Having a string or an atom as input cast value to atom. If something else is
+  given an exception is raised.
+
+  If given argument is empty string or nil return value will be nil.
 
   ## Examples
+
       iex> Csv.Schema.Parser.atom!("")
       nil
 
@@ -52,11 +55,13 @@ defmodule Csv.Schema.Parser do
   def atom!(value), do: raise("Cannot cast '#{value}' to atom")
 
   @doc """
-  Having a string or an atom as input cast value to string. If something else is given
-  an exception is raised.
-  If given argument is empty string or nil return value will be nil
+  Having a string or an atom as input cast value to string.
 
-  # Examples
+  If something else is given an exception is raised.
+  If given argument is empty string or nil return value will be nil.
+
+  ## Examples
+
       iex> Csv.Schema.Parser.string!("")
       nil
 
@@ -80,11 +85,13 @@ defmodule Csv.Schema.Parser do
   def string!(value), do: raise("Cannot cast '#{value}' to string")
 
   @doc """
-  Having a string as input cast value to integer. If something else is given
-  an exception is raised
-  If given argument is empty string or nil return value will be nil
+  Having a string as input cast value to integer.
 
-  # Examples
+  If something else is given an exception is raised.
+  If given argument is empty string or nil return value will be nil.
+
+  ## Examples
+
       iex> Csv.Schema.Parser.integer!("")
       nil
 
@@ -109,11 +116,13 @@ defmodule Csv.Schema.Parser do
   end
 
   @doc """
-  Having a string as input cast value to float. If something else is given
-  an exception is raised
-  If given argument is empty string or nil return value will be nil
+  Having a string as input cast value to float.
 
-  # Examples
+  If something else is given an exception is raised.
+  If given argument is empty string or nil return value will be nil.
+
+  ## Examples
+
       iex> Csv.Schema.Parser.float!("")
       nil
 
@@ -138,12 +147,15 @@ defmodule Csv.Schema.Parser do
   end
 
   @doc """
-  Having a string as input representing string date to parse and a string representing
-  the date format try to cast value to date. If something else is given or format is invalid
-  or date is not parsable with given format an exception is raised
-  If given argument is empty string or nil return value will be nil
+  Having a string as input representing string date to parse and a string
+  representing the date format try to cast value to date.
 
-  # Examples
+  If something else is given or format is invalid or date is not parsable with
+  given format an exception is raised.
+  If given argument is empty string or nil return value will be nil.
+
+  ## Examples
+
       iex> Csv.Schema.Parser.date!("", "whatever")
       nil
 
@@ -177,11 +189,14 @@ defmodule Csv.Schema.Parser do
   end
 
   @doc """
-  Having a string as input cast value to boolean. If something else is given
-  an exception is raised
-  If given argument is empty string or nil return value will be nil
+  Having a string as input cast value to boolean.
 
-  # Examples
+  If something else is given an exception is raised.
+
+  If given argument is empty string or nil return value will be nil.
+
+  ## Examples
+
       iex> Csv.Schema.Parser.boolean!("")
       nil
 
