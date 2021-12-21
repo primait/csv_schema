@@ -1,0 +1,259 @@
+kind: pipeline
+name: default
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
+  - name: ecs
+    host:
+      path: /etc/profile.d/ecs-credentials-endpoint
+
+services:
+- environment:
+    ALLOW_EMPTY_PASSWORD: true
+  image: public.ecr.aws/bitnami/redis:5.0
+  name: redis
+
+
+
+clone:
+  disable: true
+
+steps:
+  - name: git-clone
+    image: public.ecr.aws/prima/drone-git:1.3-3
+    environment:
+      PLUGIN_DEPTH: "5"
+
+  - name: cache-restore
+    image: public.ecr.aws/prima/drone-tools:1.21.3
+    environment:
+      BUCKET_NAME: "prima-ci-cache"
+    volumes:
+      - name: ecs
+        path: /etc/profile.d/ecs-credentials-endpoint
+      - name: docker
+        path: /var/run/docker.sock
+    commands:
+      - . /etc/profile.d/ecs-credentials-endpoint
+      - cache-restore 
+    depends_on:
+    - git-clone
+  - name: check-secrets
+    image: public.ecr.aws/prima/drone-tools:1.21.3
+    volumes:
+      - name: ecs
+        path: /etc/profile.d/ecs-credentials-endpoint
+    commands:
+      - . /etc/profile.d/ecs-credentials-endpoint
+      - check-secrets-grants
+    depends_on:
+    - git-clone
+  - name: check-public-docker-images
+    image: public.ecr.aws/prima/drone-tools:1.21.3
+    commands:
+      - check-public-docker-images
+    depends_on:
+    - git-clone
+
+  - name: build-image
+    image: public.ecr.aws/prima/drone-tools:1.21.3
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock
+    commands:
+      - sed -i 's/USER app/USER root/g' ./Dockerfile
+      - docker build -t prima/csv_schema-ci:${DRONE_COMMIT} ./
+    depends_on:
+      - cache-restore
+  - name: elixir-dependencies
+    image: prima/csv_schema-ci:${DRONE_COMMIT}
+    commands:
+      - mix deps.get
+    depends_on:
+      - build-image
+
+  - name: elixir-compile
+    image: prima/csv_schema-ci:${DRONE_COMMIT}
+    environment:
+      MIX_ENV: test
+    commands:
+      - mix compile --all-warnings --warnings-as-errors --ignore-module-conflict --debug-info
+    depends_on:
+      - elixir-dependencies
+
+  - name: elixir-dep-check
+    image: prima/csv_schema-ci:${DRONE_COMMIT}
+    commands:
+      - mix deps.unlock --check-unused
+    environment:
+      MIX_ENV: test
+    depends_on:
+      - elixir-compile
+
+  - name: elixir-format
+    image: prima/csv_schema-ci:${DRONE_COMMIT}
+    environment:
+      MIX_ENV: test
+    commands:
+      - mix format --check-formatted
+    depends_on:
+      - elixir-compile
+
+  - name: elixir-test
+    image: prima/csv_schema-ci:${DRONE_COMMIT}
+    environment:
+      MIX_ENV: test
+    commands:
+      - mix test
+    depends_on:
+      - elixir-compile
+
+  - name: elixir-credo
+    image: prima/csv_schema-ci:${DRONE_COMMIT}
+    environment:
+      MIX_ENV: test
+    commands:
+      - mix credo -a --strict
+    depends_on:
+      - elixir-compile
+
+  - name: elixir-dialyzer
+    image: prima/csv_schema-ci:${DRONE_COMMIT}
+    environment:
+      MIX_ENV: test
+    commands:
+      - mix dialyzer
+    depends_on:
+      - elixir-compile
+
+
+
+  - name: cache-save
+    image: public.ecr.aws/prima/drone-tools:1.21.3
+    environment:
+      BUCKET_NAME: "prima-ci-cache"
+    volumes:
+      - name: ecs
+        path: /etc/profile.d/ecs-credentials-endpoint
+      - name: docker
+        path: /var/run/docker.sock
+    commands:
+      - . /etc/profile.d/ecs-credentials-endpoint
+      - cache-save _build deps
+    when:
+      branch: master
+    depends_on:
+      
+    - elixir-compile
+    - elixir-format
+    - elixir-test
+    - elixir-credo
+    - elixir-dialyzer
+    - elixir-dep-check
+
+
+trigger:
+  event:
+    - push
+
+
+---
+kind: pipeline
+name: build-production
+
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
+  - name: ecs
+    host:
+      path: /etc/profile.d/ecs-credentials-endpoint
+
+clone:
+  disable: true
+
+steps:
+  - name: git-clone
+    image: public.ecr.aws/prima/drone-git:1.3-3
+    environment:
+      PLUGIN_DEPTH: "5"
+
+  - name: cache-restore
+    image: public.ecr.aws/prima/drone-tools:1.21.3
+    environment:
+      BUCKET_NAME: "prima-ci-cache"
+    volumes:
+      - name: ecs
+        path: /etc/profile.d/ecs-credentials-endpoint
+      - name: docker
+        path: /var/run/docker.sock
+    commands:
+      - . /etc/profile.d/ecs-credentials-endpoint
+      - cache-restore 
+    depends_on:
+    - git-clone
+  - name: build-image
+    image: public.ecr.aws/prima/drone-tools:1.21.3
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock
+    commands:
+      - sed -i 's/USER app/USER root/g' ./Dockerfile
+      - docker build -t prima/csv_schema-ci:${DRONE_COMMIT} ./
+    depends_on:
+      - cache-restore
+  - name: build-production
+    image: prima/csv_schema-ci:${DRONE_COMMIT}
+    environment:
+      {'MIX_ENV': 'dev', 'HEX_AUTH_KEY': {'from_secret': 'hex_auth_key'}}
+    volumes:
+      - name: ecs
+        path: /etc/profile.d/ecs-credentials-endpoint
+    commands:
+      - . /etc/profile.d/ecs-credentials-endpoint
+      - ./deploy/build production
+    depends_on:
+      - build-image
+
+
+trigger:
+  {'event': 'tag', 'ref': ['refs/tags/*.*.*']}
+
+
+
+---
+kind: pipeline
+name: email-failure
+
+
+clone:
+  disable: true
+
+steps:
+  - name: email-failure
+    image: public.ecr.aws/prima/drone-email
+    environment:
+      PLUGIN_USERNAME:
+        from_secret: email_username
+      PLUGIN_PASSWORD:
+        from_secret: email_password
+    settings:
+      host: email-smtp.eu-west-1.amazonaws.com
+      from: drone@prima.it
+trigger:
+  status:
+    - failure
+  target:
+    exclude:
+      - qa-stack
+      - qa-it
+      - qa
+
+depends_on:
+- default
+- build-production
+
+
