@@ -24,13 +24,11 @@ export ENV=$1
 export AWS_DEFAULT_REGION="eu-west-1"
 export VERSION="${DRONE_TAG:-$DRONE_COMMIT_SHA}"
 
-
-
 version=$(grep -m1 version mix.exs | cut -d'"' -f2)
 
-if [[ "$DRONE_TAG" != "$version" ]] ; then
-    echo "Package version $version does not match release version $DRONE_TAG"
-    exit 1
+if [[ "$DRONE_TAG" != "$version" ]]; then
+  echo "Package version $version does not match release version $DRONE_TAG"
+  exit 1
 fi
 
 mix deps.get
