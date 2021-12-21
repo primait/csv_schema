@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+echo $MIX_ENV
+
+source /setup_common.sh
+source /decrypt_secrets.sh
+
+if [ "$1" == "mix" ]; then
+    exec "$@"
+elif [ -n "$1" ]; then
+    sh -c "$@"
+else
+  mix hex.info
+  mix deps.get
+
+  trap : TERM INT; sleep infinity & wait
+fi
