@@ -1,0 +1,13 @@
+version: '3'
+services:
+  web:
+    build: .
+    volumes:
+      - .:/code
+      - .:/$PWD
+      - ~/.aws:/home/app/.aws
+    working_dir: /code
+    networks:
+      - default
+    env_file:
+      - biscuit.env
