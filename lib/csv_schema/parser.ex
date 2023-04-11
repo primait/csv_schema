@@ -12,7 +12,9 @@ defmodule Csv.Schema.Parser do
   def csv!(stream, headers, separator = ?;), do: csv(stream, headers, separator)
   def csv!(stream, headers, separator = ?,), do: csv(stream, headers, separator)
   def csv!(stream, headers, separator = ?\t), do: csv(stream, headers, separator)
-  def csv!(_, _, s), do: raise("Separator '#{s}' should be a codepoint and one of ';' ',' or '\\t'")
+  def csv!(stream, headers, separator = ?\s), do: csv(stream, headers, separator)
+  def csv!(stream, headers, separator = ?|), do: csv(stream, headers, separator)
+  def csv!(_, _, s), do: raise("Separator '#{s}' should be a codepoint and one of ';' ',' '\\t' '\\s' '|'")
 
   @spec csv(%Stream{}, boolean, pos_integer) :: %Stream{} | no_return
   defp csv(stream, headers, separator) do
