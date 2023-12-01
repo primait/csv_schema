@@ -156,7 +156,7 @@ defmodule Csv.Schema do
           end
         end,
         get_all: fn num_of_rows ->
-          @spec get_all :: %Stream{}
+          @spec get_all :: Stream.t()
           def get_all, do: Stream.map(1..unquote(num_of_rows), &__MODULE__.__id__/1)
           @spec get_all(:materialized) :: list(t)
           def get_all(:materialized), do: Enum.map(1..unquote(num_of_rows), &__MODULE__.__id__/1)
@@ -219,7 +219,7 @@ defmodule Csv.Schema do
   ## Entrypoint for function generation
   #
   @doc false
-  @spec __gen__(%Stream{}, list(Field.t()), %{atom => function}) :: :ok
+  @spec __gen__(Stream.t(), list(Field.t()), %{atom => function}) :: :ok
   def __gen__(csv_stream, fields, generators) do
     changesets = get_changesets(csv_stream, fields)
 
@@ -273,7 +273,7 @@ defmodule Csv.Schema do
   #
   ## Changeset
   #
-  @spec get_changesets(%Stream{}, list(Field.t())) :: list
+  @spec get_changesets(Stream.t(), list(Field.t())) :: list
   defp get_changesets(content, fields) do
     content |> Enum.map(&to_changeset(&1, fields)) |> sort_changeset(fields) |> set_id()
   end
@@ -299,7 +299,7 @@ defmodule Csv.Schema do
   defp get_value(collection, columns, join \\ "")
 
   defp get_value(collection, columns, join) when is_list(columns) do
-    columns |> Enum.map(&get_value(collection, &1, join)) |> Enum.join(join)
+    Enum.map_join(columns, join, &get_value(collection, &1, join))
   end
 
   defp get_value(collection, elem, _) when is_map(collection), do: Map.get(collection, elem)
@@ -326,7 +326,7 @@ defmodule Csv.Schema do
   ## Validations
   #
   @doc false
-  @spec __validate__(%Stream{}, list(Field.t()), boolean) :: :ok | no_return
+  @spec __validate__(Stream.t(), list(Field.t()), boolean) :: :ok | no_return
   def __validate__(content, fields, headers) do
     validate_csv_not_empty(content)
     validate_csv_has_fields(content, fields, headers)
@@ -334,12 +334,12 @@ defmodule Csv.Schema do
     validate_unique(content, fields)
   end
 
-  @spec validate_csv_not_empty(%Stream{}) :: :ok | no_return
+  @spec validate_csv_not_empty(Stream.t()) :: :ok | no_return
   defp validate_csv_not_empty(content) do
     if content |> Stream.take(1) |> Enum.count() > 0, do: :ok, else: raise("Provided csv is empty")
   end
 
-  @spec validate_csv_has_fields(%Stream{}, list(Field.t()), boolean) :: :ok | no_return
+  @spec validate_csv_has_fields(Stream.t(), list(Field.t()), boolean) :: :ok | no_return
   defp validate_csv_has_fields(content, fields, true) do
     content
     |> Stream.take(1)
@@ -373,16 +373,16 @@ defmodule Csv.Schema do
     end)
   end
 
-  @spec validate_key(%Stream{}, list(Field.t())) :: :ok | no_return
+  @spec validate_key(Stream.t(), list(Field.t())) :: :ok | no_return
   defp validate_key(content, fields) do
     case Enum.filter(fields, & &1.key) do
       [] -> :ok
       [field] -> valid_key_field?(content, field)
-      fields -> raise "Multiple keys defined (#{fields |> Enum.map(& &1.column) |> Enum.join(", ")})"
+      fields -> raise "Multiple keys defined (#{Enum.map_join(fields, ", ", & &1.column)})"
     end
   end
 
-  @spec valid_key_field?(%Stream{}, list(Field.t())) :: :ok | no_return
+  @spec valid_key_field?(Stream.t(), list(Field.t())) :: :ok | no_return
   defp valid_key_field?(content, field) do
     values = Enum.map(content, &get_value(&1, field.column, field.join))
     unique = values |> Enum.uniq() |> Enum.reject(fn value -> is_nil(value) || value == "" end) |> Enum.count()
@@ -394,7 +394,7 @@ defmodule Csv.Schema do
     end
   end
 
-  @spec validate_unique(%Stream{}, list(Field.t())) :: :ok | no_return
+  @spec validate_unique(Stream.t(), list(Field.t())) :: :ok | no_return
   defp validate_unique(content, fields) do
     Enum.each(fields, fn
       %Field{column: column, key: true, join: join} -> unique_or_raise(content, column, join)
@@ -403,7 +403,7 @@ defmodule Csv.Schema do
     end)
   end
 
-  @spec unique_or_raise(%Stream{}, term, String.t()) :: :ok | no_return
+  @spec unique_or_raise(Stream.t(), term, String.t()) :: :ok | no_return
   defp unique_or_raise(content, column, join) do
     values = content |> Stream.map(&get_value(&1, column, join)) |> Enum.reject(&(is_nil(&1) || &1 == ""))
 
