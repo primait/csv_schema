@@ -1,0 +1,77 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  ci:
+    # Avoid duplicate jobs on PR from a branch on the same repo
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: 1.13
+          otp-version: 24
+
+      # Check out the code.
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Define how to cache deps. Restores existing cache if present.
+      - name: Cache deps
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-elixir-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.cache-name }}-
+      # Define how to cache the `_build` directory.
+      # After the first run, this speeds up tests runs a lot.
+      # This includes not re-compiling our project's downloaded deps every run.
+      - name: Cache compiled build
+        id: cache-build
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-compiled-build
+        with:
+          path: _build
+          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ env.cache-name }}-
+            ${{ runner.os }}-mix-
+      # Conditionally bust the cache when job is re-run.
+      # Sometimes, we may have issues with incremental builds that are fixed by doing a full recompile.
+      # In order to not waste dev time on such trivial issues force a full recompile only on builds that are retried.
+      # See https://fly.io/docs/elixir/advanced-guides/github-actions-elixir-ci-cd/ for more infos
+      - name: Clean to rule out incremental build as a source of flakiness
+        if: github.run_attempt != '1'
+        run: |
+          mix deps.clean --all
+          mix clean
+      - name: Deps get
+        run: mix deps.get
+      - name: Dependencies Check
+        run: mix deps.unlock --check-unused
+      - name: Compiles without warnings
+        run: mix compile --warnings-as-errors
+      - name: Check Formatting
+        run: mix format --check-formatted
+      - name: Credo
+        run: mix credo -a --strict
+      - name: Test
+        run: mix test
+      - name: Dialyzer
+        run: mix dialyzer
+
+  alls-green:
+    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name)
+    runs-on: ubuntu-latest
+    needs:
+      - ci
+    steps:
+      - run: ${{ !contains(needs.*.result, 'failure') }}
