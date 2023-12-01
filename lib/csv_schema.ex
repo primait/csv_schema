@@ -82,6 +82,10 @@ defmodule Csv.Schema do
   """
   defmacro schema([data: string], do: block) do
     quote do
+      if !is_binary(unquote(string)) do
+        raise "`data:` attribute param must be a literal string"
+      end
+
       to_stream = fn -> unquote(string) |> String.split("\n") |> Enum.reject(&(&1 == "")) |> Stream.map(& &1) end
       Module.put_attribute(__MODULE__, :to_stream, to_stream)
       unquote(__register__(block))
