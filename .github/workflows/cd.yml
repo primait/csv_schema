@@ -1,0 +1,39 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '24'
+          elixir-version: '1.13'
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: setup hex
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+      - name: Get deps
+        run: mix deps.get
+      - name: Get version
+        run: |
+          VERSION=$(grep -m1 version mix.exs | cut -d'"' -f2)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: Check version
+        if: ${{ github.event.release.tag_name != env.VERSION }}
+        run: |
+          echo "Github ref tag [${{ github.event.release.tag_name }}] is different from mix.exs version [${{ env.VERSION }}]"
+          exit 1
+      - name: Login to hex.pm
+        run: |
+          mix hex.config api_key "$HEX_AUTH_KEY"
+        env:
+          HEX_AUTH_KEY: ${{ secrets.HEX_AUTH_KEY }}
+      - name: Publish
+        run: mix hex.publish --yes
