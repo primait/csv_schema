@@ -18,7 +18,7 @@ defmodule Csv.Schema.MixProject do
       docs: docs(),
       dialyzer: [
         plt_add_apps: [:mix],
-        plt_add_deps: :transitive,
+        plt_add_deps: :app_tree,
         ignore_warnings: ".dialyzerignore"
       ]
     ]
@@ -34,7 +34,7 @@ defmodule Csv.Schema.MixProject do
       {:csv, "~> 3.2"},
       {:timex, "~> 3.7"},
       {:credo, "~> 1.7", only: [:dev, :test]},
-      {:dialyxir, "1.0.0-rc.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "1.4.3", only: [:dev, :test], runtime: false},
       {:inch_ex, "~> 2.0", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
