@@ -5,14 +5,14 @@ spec:
   lifecycle: production
   owner: team-claims
   system: prima.it
-  dependsOn:
-  providesApis:
+  dependsOn: []
+  providesApis: []
 metadata:
   name: csv_schema
   description: Csv schema is a library helping you to build Ecto.Schema-like modules having a csv file as source.
   tags:
     - elixir
     - csv
-  links:
+  links: []
   annotations:
     backstage.io/techdocs-ref: dir:.
