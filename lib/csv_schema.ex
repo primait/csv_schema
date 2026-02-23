@@ -143,13 +143,16 @@ defmodule Csv.Schema do
       #
       ## Destination module function generators
       #
-      @spec __id__(non_neg_integer) :: t | nil
       generators = %{
-        internal_id: fn id, changeset ->
-          def __id__(unquote(id)), do: struct!(__MODULE__, unquote(Macro.escape(changeset)))
-        end,
-        default_internal_id: fn ->
-          def __id__(_), do: nil
+        internal_id: fn csv_map ->
+          @__csv_map__ csv_map
+          @spec __id__(non_neg_integer) :: t | nil
+          def __id__(id) do
+            case Map.fetch(@__csv_map__, id) do
+              {:ok, changeset} -> struct!(__MODULE__, changeset)
+              :error -> nil
+            end
+          end
         end,
         by: fn translation_map, name ->
           @spec unquote(:"by_#{name}")(any) :: t | nil
@@ -179,6 +182,7 @@ defmodule Csv.Schema do
       #
       ## Cleanup
       #
+      Module.delete_attribute(__MODULE__, :__csv_map__)
       Module.delete_attribute(__MODULE__, :separator)
       Module.delete_attribute(__MODULE__, :struct_fields)
       Module.delete_attribute(__MODULE__, :fields)
@@ -231,16 +235,21 @@ defmodule Csv.Schema do
   def __gen__(csv_stream, fields, generators) do
     changesets = get_changesets(csv_stream, fields)
 
-    gen_internal_id(changesets, Map.fetch!(generators, :internal_id), Map.fetch!(generators, :default_internal_id))
+    gen_internal_id(changesets, Map.fetch!(generators, :internal_id))
     gen_by(changesets, fields, Map.fetch!(generators, :by))
     gen_filter_by(changesets, fields, Map.fetch!(generators, :filter_by))
     gen_get_all(changesets, Map.fetch!(generators, :get_all))
   end
 
-  @spec gen_internal_id(list(map), function, function) :: :ok
-  defp gen_internal_id(changesets, internal_id, default_internal_id) do
-    Enum.each(changesets, &internal_id.(get_id(&1), Map.delete(&1, :__id__)))
-    default_internal_id.()
+  @spec gen_internal_id(list(map), function) :: :ok
+  defp gen_internal_id(changesets, internal_id) do
+    csv_map =
+      changesets
+      |> Enum.into(%{}, fn changeset ->
+        {get_id(changeset), Map.delete(changeset, :__id__)}
+      end)
+
+    internal_id.(csv_map)
   end
 
   @spec gen_by(list(map), list(Field.t()), function) :: :ok
