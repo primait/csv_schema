@@ -244,8 +244,7 @@ defmodule Csv.Schema do
   @spec gen_internal_id(list(map), function) :: :ok
   defp gen_internal_id(changesets, internal_id) do
     csv_map =
-      changesets
-      |> Enum.into(%{}, fn changeset ->
+      Enum.into(changesets, %{}, fn changeset ->
         {get_id(changeset), Map.delete(changeset, :__id__)}
       end)
 
