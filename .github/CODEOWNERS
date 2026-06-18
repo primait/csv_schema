@@ -1,2 +1,5 @@
-# see https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
-* @primait/claims-resolution @primait/claims-payments @primait/claims-orchestration @primait/claims-management @primait/claims-modeling
+* @primait/claims-operations @primait/claims-resolution @primait/claims-gateway
+
+/deploy @primait/claims-sre @primait/claims-operations @primait/claims-resolution @primait/claims-gateway
+
+/CODEOWNERS @primait/claims-sre @primait/claims-operations @primait/claims-resolution @primait/claims-gateway @primait/claims-tech-lead
