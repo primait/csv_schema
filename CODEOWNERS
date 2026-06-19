@@ -1,5 +1,3 @@
-* @primait/claims-operations @primait/claims-settlement @primait/claims-gateway
+* @primait/claims-operations @primait/claims-settlement @primait/claims-gateway @primait/claims-engineering-uk @primait/claims-engineering-spain
 
-/deploy @primait/claims-sre @primait/claims-operations @primait/claims-settlement @primait/claims-gateway
-
-/CODEOWNERS @primait/claims-sre @primait/claims-operations @primait/claims-settlement @primait/claims-gateway @primait/claims-tech-lead
+/deploy @primait/claims-sre @primait/claims-operations @primait/claims-settlement @primait/claims-gateway @primait/claims-engineering-uk @primait/claims-engineering-spain
