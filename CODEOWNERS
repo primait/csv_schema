@@ -1,0 +1,5 @@
+* @primait/claims-operations @primait/claims-settlement @primait/claims-gateway
+
+/deploy @primait/claims-sre @primait/claims-operations @primait/claims-settlement @primait/claims-gateway
+
+/CODEOWNERS @primait/claims-sre @primait/claims-operations @primait/claims-settlement @primait/claims-gateway @primait/claims-tech-lead
