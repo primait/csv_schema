@@ -1,9 +1,9 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 spec:
-  type: service
+  type: library
   lifecycle: production
-  owner: team-claims
+  owner: claims-settlement
   system: prima.it
   dependsOn: []
   providesApis: []
