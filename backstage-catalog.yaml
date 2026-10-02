@@ -3,7 +3,7 @@ kind: Component
 spec:
   type: library
   lifecycle: production
-  owner: claims-settlement
+  owner: team-claims-settlement
   system: prima.it
   dependsOn: []
   providesApis: []
