@@ -31,6 +31,7 @@ defmodule Csv.Schema.MixProject do
 
   defp deps do
     [
+      {:certifi, "~> 2.18.0", override: true},
       {:csv, "~> 3.2"},
       {:timex, "~> 3.7"},
       {:credo, "~> 1.7", only: [:dev, :test]},
