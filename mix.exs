@@ -32,7 +32,7 @@ defmodule Csv.Schema.MixProject do
   defp deps do
     [
       {:csv, "~> 3.2"},
-      {:timex, "~> 3.7"},
+      {:timex, "~> 4.0"},
       {:credo, "~> 1.7", only: [:dev, :test]},
       {:dialyxir, "1.4.7", only: [:dev, :test], runtime: false},
       {:inch_ex, "~> 2.0", only: [:dev, :test], runtime: false},
