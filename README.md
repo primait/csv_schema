@@ -20,7 +20,7 @@ The package can be installed by adding `:csv_schema` to your list of dependencie
 ```elixir
 def deps do
   [
-    {:csv_schema, "~> 0.2.8"}
+    {:csv_schema, "~> 2.0"}
   ]
 end
 ```
