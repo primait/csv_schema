@@ -8,7 +8,7 @@ defmodule Csv.Schema.MixProject do
     [
       app: :csv_schema,
       version: @version,
-      elixir: "~> 1.6",
+      elixir: "~> 1.12",
       elixirc_paths: elixir_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -33,6 +33,7 @@ defmodule Csv.Schema.MixProject do
     [
       {:csv, "~> 3.2"},
       {:timex, "~> 3.7"},
+      {:tzdata, "~> 1.2"},
       {:credo, "~> 1.7", only: [:dev, :test]},
       {:dialyxir, "1.4.9", only: [:dev, :test], runtime: false},
       {:inch_ex, "~> 2.0", only: [:dev, :test], runtime: false},
