@@ -9,10 +9,9 @@ spec:
   providesApis: []
 metadata:
   name: csv_schema
-  description: Csv schema is a library helping you to build Ecto.Schema-like modules having a csv file as source.
+  description: Csv schema is a library helping you to build Ecto.Schema-like
+    modules having a csv file as source.
   tags:
     - elixir
     - csv
   links: []
-  annotations:
-    backstage.io/techdocs-ref: dir:.
