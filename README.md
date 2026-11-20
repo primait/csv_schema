@@ -1,6 +1,6 @@
 # Csv Schema
 
-[![Build Status](https://travis-ci.org/primait/csv_schema.svg?branch=master)](https://travis-ci.org/primait/csv_schema)
+[![CI](https://github.com/primait/csv_schema/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/primait/csv_schema/actions/workflows/ci.yml)
 [![Module Version](https://img.shields.io/hexpm/v/csv_schema.svg)](https://hex.pm/packages/csv_schema)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/csv_schema/)
 [![Total Download](https://img.shields.io/hexpm/dt/csv_schema.svg)](https://hex.pm/packages/csv_schema)
@@ -20,7 +20,7 @@ The package can be installed by adding `:csv_schema` to your list of dependencie
 ```elixir
 def deps do
   [
-    {:csv_schema, "~> 2.0.1"}
+    {:csv_schema, "~> 2.0.2"}
   ]
 end
 ```

@@ -68,10 +68,29 @@ jobs:
       - name: Dialyzer
         run: mix dialyzer
 
+  # Mirrors the CD toolchain so publishing problems (package build, docs generation) surface before a release
+  docs:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '24'
+          elixir-version: '1.15'
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Deps get
+        run: mix deps.get
+      - name: Build package
+        run: mix hex.build
+      - name: Build docs
+        run: mix docs
+
   alls-green:
     if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name)
     runs-on: ubuntu-24.04
     needs:
       - ci
+      - docs
     steps:
       - run: ${{ !contains(needs.*.result, 'failure') }}
