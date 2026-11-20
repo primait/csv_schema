@@ -2,7 +2,7 @@ defmodule Csv.Schema.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/primait/csv_schema"
-  @version "2.0.1"
+  @version "2.0.2"
 
   def project do
     [
